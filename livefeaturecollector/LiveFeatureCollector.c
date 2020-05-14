@@ -30,6 +30,8 @@
 
 u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet);
 u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
+u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
+u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
 
 /* 
  *
@@ -102,6 +104,44 @@ void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
     }
 }
 
+/* handle ethernet packets when captured.
+ */
+u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
+    u_int caplen = pkthdr->caplen;
+    u_int length = pkthdr->len;
+    struct ether_header *eptr;  /* net/ethernet.h */
+    u_short ether_type;
+
+    if (caplen < ETHER_HDRLEN){
+        fprintf(stdout,"Packet length less than ethernet header length\n");
+        return -1;
+    }
+
+    /* lets start with the ether header... */
+    eptr = (struct ether_header *) packet;
+    ether_type = ntohs(eptr->ether_type);
+
+    /* Lets print SOURCE DEST TYPE LENGTH */
+    printf("----------------------------------------------------------------------------\n");
+    fprintf(stdout,"ETH: ");
+    fprintf(stdout,"%s ", ether_ntoa((struct ether_addr*)eptr->ether_shost));
+    fprintf(stdout,"%s ", ether_ntoa((struct ether_addr*)eptr->ether_dhost));
+
+    /* check if the packet encaplsulate an ip packet or arp packet or other */
+    if (ether_type == ETHERTYPE_IP){
+        fprintf(stdout,"(IP)");
+    }else  if (ether_type == ETHERTYPE_ARP){
+        fprintf(stdout,"(ARP)");
+    }else  if (eptr->ether_type == ETHERTYPE_REVARP){
+        fprintf(stdout,"(RARP)");
+    }else {
+        fprintf(stdout,"(?)");
+    }
+    fprintf(stdout," %d\n",length);
+    
+    return ether_type;
+}
+
 /* looking at Internet Protocol headers */
 u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
     const struct ip_header* ip;
@@ -152,8 +192,14 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
         fprintf(stdout,"IP: ");
         fprintf(stdout,"%s ", inet_ntoa(ip->ip_src));
         fprintf(stdout,"%s %d %d %d %d\n", inet_ntoa(ip->ip_dst), hlen,version,len,off);
-        printf("Protocol type : %d\n", protocol_id);
+        // printf("Protocol type : %d\n", protocol_id);
     }
+    if (protocol_id == 6){
+        handle_TCP(args,pkthdr,packet);
+    } else if (protocol_id == 17){
+        handle_UDP(args,pkthdr,packet);
+    }
+    
 
     return NULL;
 }
@@ -165,7 +211,12 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
 */
 
 u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
-
+    const struct tcp_header* tcp;
+    
+    tcp = (struct tcp_header*)(packet + sizeof(struct ip_header) + sizeof(struct ether_header));
+    printf("TCP: [seq %d] [ack %d] ", ntohs(tcp->th_seq), ntohs(tcp->th_ack));
+    fprintf(stdout,"[src port %d] [dst port %d] ", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
+    fprintf(stdout,"[win %d]\n", ntohs(tcp->th_win));
 }
 
 
@@ -173,46 +224,14 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
  * handle udp packets
 */
  u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
-     
+    const struct udp_header* udp;
+    
+    udp = (struct udp_header*)(packet + sizeof(struct ether_header) + sizeof(struct ip_header));
+    fprintf(stdout, "UDP: [src port %d] [dst port %d]", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
+    fprintf(stdout, " [datagram len %d] [chksum %d]\n" , ntohs(udp->uh_ulen), ntohs(udp->uh_ulen));
+
  }
 
-/* handle ethernet packets when captured.
- */
-u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
-    u_int caplen = pkthdr->caplen;
-    u_int length = pkthdr->len;
-    struct ether_header *eptr;  /* net/ethernet.h */
-    u_short ether_type;
-
-    if (caplen < ETHER_HDRLEN){
-        fprintf(stdout,"Packet length less than ethernet header length\n");
-        return -1;
-    }
-
-    /* lets start with the ether header... */
-    eptr = (struct ether_header *) packet;
-    ether_type = ntohs(eptr->ether_type);
-
-    /* Lets print SOURCE DEST TYPE LENGTH */
-    printf("----------------------------------------------------------------------------\n");
-    fprintf(stdout,"ETH: ");
-    fprintf(stdout,"%s ", ether_ntoa((struct ether_addr*)eptr->ether_shost));
-    fprintf(stdout,"%s ", ether_ntoa((struct ether_addr*)eptr->ether_dhost));
-
-    /* check if the packet encaplsulate an ip packet or arp packet or other */
-    if (ether_type == ETHERTYPE_IP){
-        fprintf(stdout,"(IP)");
-    }else  if (ether_type == ETHERTYPE_ARP){
-        fprintf(stdout,"(ARP)");
-    }else  if (eptr->ether_type == ETHERTYPE_REVARP){
-        fprintf(stdout,"(RARP)");
-    }else {
-        fprintf(stdout,"(?)");
-    }
-    fprintf(stdout," %d\n",length);
-    
-    return ether_type;
-}
 
 
 int main(int argc,char **argv){
