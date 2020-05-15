@@ -37,7 +37,7 @@ u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_
 u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
 u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
 u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
-
+FILE *output_file;
 
 /* looking at ethernet headers */
 void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
@@ -142,6 +142,7 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
         fprintf(stdout,"%s ", inet_ntoa(iph->ip_src));
         fprintf(stdout,"%s [hdr len %d] [version %d] [len %d] [off %d]\n", inet_ntoa(iph->ip_dst), hlen,version,len,off);
         // printf("Protocol type : %d\n", protocol_id);
+        fprintf(output_file,"%d,%s,%s,%d,",protocol_id,inet_ntoa(iph->ip_src),inet_ntoa(iph->ip_dst),len);
     }
     if (protocol_id == 6){
         handle_TCP(args,pkthdr,packet);
@@ -173,6 +174,8 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
                 (tcp->rst ? 'R' : '*'),
                 (tcp->syn ? 'S' : '*'),
                 (tcp->fin ? 'F' : '*'));
+
+    fprintf(output_file,"%d,%d\n", ntohs(tcp->th_sport), ntohs(tcp->th_dport));            
 }
 
 
@@ -186,6 +189,8 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
     fprintf(stdout, "UDP: [src port %d] [dst port %d]", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
     fprintf(stdout, " [datagram len %d] [chksum %d]\n" , ntohs(udp->uh_ulen), ntohs(udp->uh_ulen));
 
+    fprintf(output_file,"%d,%d\n", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
+
  }
 
 
@@ -198,6 +203,8 @@ int main(int argc,char **argv){
     bpf_u_int32 maskp;          /* subnet mask               */
     bpf_u_int32 netp;           /* ip                        */
     u_char* args = NULL;
+
+    output_file = fopen("out.csv","a");
 
     /* Options must be passed in as a string */
     if(argc < 2){ 
@@ -220,7 +227,7 @@ int main(int argc,char **argv){
     if(argc > 2){
         /* Lets try and compile the program.. non-optimized */
         if(pcap_compile(liveCapture,&fp,argv[2],0,netp) == -1){
-            fprintf(stderr,"Error calling pcap_compile\n");
+            fprintf(stderr,"Error calling pcap_compile\n",pcap_geterr(liveCapture));
             exit(1);
         }
 
@@ -235,5 +242,6 @@ int main(int argc,char **argv){
     pcap_loop(liveCapture,atoi(argv[1]),Jacket,args);
 
     fprintf(stdout,"\nfinished\n");
+    fclose(output_file);
     return 0;
 }
