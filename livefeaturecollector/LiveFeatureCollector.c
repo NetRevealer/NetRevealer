@@ -10,6 +10,8 @@
 *
 **********************************************************************/
 
+
+// 
 #include <pcap.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,8 +21,11 @@
 #include <arpa/inet.h>
 #include <netinet/if_ether.h> 
 #include <net/ethernet.h>
+#include <netinet/in.h>
 #include <netinet/ether.h> 
-#include <netinet/ip.h> 
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 
 /* tcpdump header (ether.h) defines ETHER_HDRLEN) */
 #ifndef ETHER_HDRLEN 
@@ -32,62 +37,6 @@ u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_
 u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
 u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
 u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
-
-/* 
- *
- * declare ip_len and ip_off to be short, rather than u_short
- * pragmatically since otherwise unsigned comparisons can result
- * against negative integers quite easily, and fail in subtle ways.
- *
- */
-struct ip_header{
-	u_int8_t	ip_vhl;		/* header length, version */
-    #define IP_V(ip)	(((ip)->ip_vhl & 0xf0) >> 4)
-    #define IP_HL(ip)	((ip)->ip_vhl & 0x0f)
-	u_int8_t	ip_tos;		/* type of service */
-	u_int16_t	ip_len;		/* total length */
-	u_int16_t	ip_id;		/* identification */
-	u_int16_t	ip_off;		/* fragment offset field */
-    #define	IP_DF 0x4000			/* dont fragment flag */
-    #define	IP_MF 0x2000			/* more fragments flag */
-    #define	IP_OFFMASK 0x1fff		/* mask for fragmenting bits */
-	u_int8_t	ip_ttl;		/* time to live */
-	u_int8_t	ip_p;		/* protocol */
-	u_int16_t	ip_sum;		/* checksum */
-	struct	in_addr ip_src,ip_dst;	/* source and dest address */
-};
-/* TCP header */
-
-typedef u_int tcp_seq;
-struct tcp_header{
-    u_short th_sport;	/* source port */
-    u_short th_dport;	/* destination port */
-    tcp_seq th_seq;		/* sequence number */
-    tcp_seq th_ack;		/* acknowledgement number */
-    u_char th_offx2;	/* data offset, rsvd */
-	#define TH_OFF(th)	(((th)->th_offx2 & 0xf0) >> 4)
-    u_char th_flags;
-	#define TH_FIN 0x01
-	#define TH_SYN 0x02
-	#define TH_RST 0x04
-	#define TH_PUSH 0x08
-	#define TH_ACK 0x10
-	#define TH_URG 0x20
-	#define TH_ECE 0x40
-	#define TH_CWR 0x80
-	#define TH_FLAGS (TH_FIN|TH_SYN|TH_RST|TH_ACK|TH_URG|TH_ECE|TH_CWR)
-    u_short th_win;		/* window */
-    u_short th_sum;		/* checksum */
-    u_short th_urp;		/* urgent pointer */
-};
-
-/* UDP header*/
-struct udp_header{
-    u_short	uh_sport;		/* source port */
-	u_short	uh_dport;		/* destination port */
-	u_short	uh_ulen;		/* datagram length */
-	u_short	uh_sum;			/* datagram checksum */
-};
 
 
 /* looking at ethernet headers */
@@ -144,7 +93,7 @@ u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_
 
 /* looking at Internet Protocol headers */
 u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
-    const struct ip_header* ip;
+    const struct ip* iph;
     u_int length = pkthdr->len;
     u_int hlen,off,version;
     int i;
@@ -154,20 +103,20 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
     int len;
 
     /* jump pass the ethernet header */
-    ip = (struct ip_header*)(packet + sizeof(struct ether_header));
-    protocol_id = ip->ip_p;
+    iph = (struct ip*)(packet + sizeof(struct ether_header));
+    protocol_id = iph->ip_p;
     length -= sizeof(struct ether_header); 
 
     /* check to see we have a packet of valid length */
-    if (length < sizeof(struct ip_header)){
+    if (length < sizeof(struct ip)){
         printf("truncated ip %d",length);
         return NULL;
     }
 
-    len     = ntohs(ip->ip_len);
-    hlen    = IP_HL(ip); /* header length */
-    version = IP_V(ip);/* ip version */
-
+    len     = ntohs(iph->ip_len);
+    hlen    = iph->ip_hl; /* header length */
+    version = iph->ip_v;/* ip version */
+    
     /* check version */
     if(version != 4){
       fprintf(stdout,"Unknown version %d\n",version);
@@ -185,13 +134,13 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
     }
 
     /* Check to see if we have the first fragment */
-    off = ntohs(ip->ip_off);
+    off = ntohs(iph->ip_off);
     /* aka no 1's in first 13 bits */
     if((off & 0x1fff) == 0 ){
         /* print SOURCE DESTINATION hlen version len offset */
         fprintf(stdout,"IP: ");
-        fprintf(stdout,"%s ", inet_ntoa(ip->ip_src));
-        fprintf(stdout,"%s %d %d %d %d\n", inet_ntoa(ip->ip_dst), hlen,version,len,off);
+        fprintf(stdout,"%s ", inet_ntoa(iph->ip_src));
+        fprintf(stdout,"%s [hdr len %d] [version %d] [len %d] [off %d]\n", inet_ntoa(iph->ip_dst), hlen,version,len,off);
         // printf("Protocol type : %d\n", protocol_id);
     }
     if (protocol_id == 6){
@@ -211,12 +160,19 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
 */
 
 u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
-    const struct tcp_header* tcp;
+    const struct tcphdr* tcp;
     
-    tcp = (struct tcp_header*)(packet + sizeof(struct ip_header) + sizeof(struct ether_header));
-    printf("TCP: [seq %d] [ack %d] ", ntohs(tcp->th_seq), ntohs(tcp->th_ack));
-    fprintf(stdout,"[src port %d] [dst port %d] ", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
-    fprintf(stdout,"[win %d]\n", ntohs(tcp->th_win));
+    tcp = (struct tcphdr*)(packet + sizeof(struct ip) + sizeof(struct ether_header));
+    fprintf(stdout,"TCP: [seq %u] [ack %u] ", ntohl(tcp->th_seq), ntohl(tcp->th_ack));
+    fprintf(stdout,"[src port %u] [dst port %u] ", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
+    fprintf(stdout,"[win %d] ", ntohs(tcp->th_win));
+    fprintf(stdout,"[flags: %c%c%c%c%c%c]\n",
+                (tcp->urg ? 'U' : '*'),
+                (tcp->ack ? 'A' : '*'),
+                (tcp->psh ? 'P' : '*'),
+                (tcp->rst ? 'R' : '*'),
+                (tcp->syn ? 'S' : '*'),
+                (tcp->fin ? 'F' : '*'));
 }
 
 
@@ -224,9 +180,9 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
  * handle udp packets
 */
  u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
-    const struct udp_header* udp;
+    const struct udphdr* udp;
     
-    udp = (struct udp_header*)(packet + sizeof(struct ether_header) + sizeof(struct ip_header));
+    udp = (struct udphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
     fprintf(stdout, "UDP: [src port %d] [dst port %d]", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
     fprintf(stdout, " [datagram len %d] [chksum %d]\n" , ntohs(udp->uh_ulen), ntohs(udp->uh_ulen));
 
