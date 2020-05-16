@@ -15,6 +15,7 @@
 #include <pcap.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -37,7 +38,20 @@ u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_
 u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
 u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
 u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
+FILE *output_file;
 
+// control signals : Ctrl + c
+void sigintHandler(int sig_num) 
+{ 
+    /* Reset handler to catch SIGINT next time. 
+       Refer http://en.cppreference.com/w/c/program/signal */
+    signal(SIGINT, sigintHandler); 
+    printf("[*] Exiting live feature collector using Ctrl+C \n");
+    printf("[*] Flushing data to the output file \n");
+    fflush(output_file);
+    fclose(output_file);
+    exit(0);
+} 
 
 /* looking at ethernet headers */
 void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
@@ -51,6 +65,7 @@ void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
     }else if(type == ETHERTYPE_REVARP){
         /* handle reverse arp packet */
     }
+    fprintf(output_file,"\n");
 }
 
 /* handle ethernet packets when captured.
@@ -142,6 +157,7 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
         fprintf(stdout,"%s ", inet_ntoa(iph->ip_src));
         fprintf(stdout,"%s [hdr len %d] [version %d] [len %d] [off %d]\n", inet_ntoa(iph->ip_dst), hlen,version,len,off);
         // printf("Protocol type : %d\n", protocol_id);
+        fprintf(output_file,"%d,%s,%s,%d,",protocol_id,inet_ntoa(iph->ip_src),inet_ntoa(iph->ip_dst),len);
     }
     if (protocol_id == 6){
         handle_TCP(args,pkthdr,packet);
@@ -173,6 +189,8 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
                 (tcp->rst ? 'R' : '*'),
                 (tcp->syn ? 'S' : '*'),
                 (tcp->fin ? 'F' : '*'));
+
+    fprintf(output_file,"%d,%d", ntohs(tcp->th_sport), ntohs(tcp->th_dport));            
 }
 
 
@@ -185,6 +203,8 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
     udp = (struct udphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
     fprintf(stdout, "UDP: [src port %d] [dst port %d]", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
     fprintf(stdout, " [datagram len %d] [chksum %d]\n" , ntohs(udp->uh_ulen), ntohs(udp->uh_ulen));
+
+    fprintf(output_file,"%d,%d", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
 
  }
 
@@ -205,6 +225,10 @@ int main(int argc,char **argv){
         return 0;
     }
 
+    signal(SIGINT, sigintHandler);
+    output_file = fopen("out.csv","a");
+    // fprintf(output_file,"protocol,ip dst,ip src,len,flags,");
+
     /* ask pcap for the network address and mask of the device */
     pcap_lookupnet(dev,&netp,&maskp,errbuf);
 
@@ -220,7 +244,7 @@ int main(int argc,char **argv){
     if(argc > 2){
         /* Lets try and compile the program.. non-optimized */
         if(pcap_compile(liveCapture,&fp,argv[2],0,netp) == -1){
-            fprintf(stderr,"Error calling pcap_compile\n");
+            fprintf(stderr, "%s\n", pcap_geterr(liveCapture));
             exit(1);
         }
 
@@ -235,5 +259,7 @@ int main(int argc,char **argv){
     pcap_loop(liveCapture,atoi(argv[1]),Jacket,args);
 
     fprintf(stdout,"\nfinished\n");
+    fflush(output_file);
+    fclose(output_file);
     return 0;
 }
