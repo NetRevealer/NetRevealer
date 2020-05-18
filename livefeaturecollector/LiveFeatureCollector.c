@@ -60,12 +60,14 @@ void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
     if(type == ETHERTYPE_IP){
         /* handle IP packet */
         handle_IP(args,pkthdr,packet);
+        fprintf(output_file,"\n");
+
     }else if(type == ETHERTYPE_ARP){
         /* handle arp packet */
     }else if(type == ETHERTYPE_REVARP){
         /* handle reverse arp packet */
     }
-    fprintf(output_file,"\n");
+    
 }
 
 /* handle ethernet packets when captured.
@@ -157,7 +159,8 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
         fprintf(stdout,"%s ", inet_ntoa(iph->ip_src));
         fprintf(stdout,"%s [hdr len %d] [version %d] [len %d] [off %d]\n", inet_ntoa(iph->ip_dst), hlen,version,len,off);
         // printf("Protocol type : %d\n", protocol_id);
-        fprintf(output_file,"%d,%s,%s,%d,",protocol_id,inet_ntoa(iph->ip_src),inet_ntoa(iph->ip_dst),len);
+        fprintf(output_file,"%d,%s,",protocol_id,inet_ntoa(iph->ip_src));
+        fprintf(output_file,"%s,%d,",inet_ntoa(iph->ip_dst),len);
     }
     if (protocol_id == 6){
         handle_TCP(args,pkthdr,packet);
