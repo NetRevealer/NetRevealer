@@ -27,6 +27,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <sys/time.h>
 
 /* tcpdump header (ether.h) defines ETHER_HDRLEN) */
 #ifndef ETHER_HDRLEN 
@@ -67,7 +68,7 @@ void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
     }else if(type == ETHERTYPE_REVARP){
         /* handle reverse arp packet */
     }
-    
+
 }
 
 /* handle ethernet packets when captured.
@@ -77,6 +78,8 @@ u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_
     u_int length = pkthdr->len;
     struct ether_header *eptr;  /* net/ethernet.h */
     u_short ether_type;
+
+    struct timeval timestamp = pkthdr->ts;
 
     if (caplen < ETHER_HDRLEN){
         fprintf(stdout,"Packet length less than ethernet header length\n");
@@ -90,6 +93,7 @@ u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_
     /* Lets print SOURCE DEST TYPE LENGTH */
     printf("----------------------------------------------------------------------------\n");
     fprintf(stdout,"ETH: ");
+    fprintf(stdout,"%ld.%06ld\n", timestamp.tv_sec, timestamp.tv_usec);
     fprintf(stdout,"%s ", ether_ntoa((struct ether_addr*)eptr->ether_shost));
     fprintf(stdout,"%s ", ether_ntoa((struct ether_addr*)eptr->ether_dhost));
 
@@ -181,6 +185,8 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
 u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
     const struct tcphdr* tcp;
     
+    struct timeval timestamp = pkthdr->ts;
+
     tcp = (struct tcphdr*)(packet + sizeof(struct ip) + sizeof(struct ether_header));
     fprintf(stdout,"TCP: [seq %u] [ack %u] ", ntohl(tcp->th_seq), ntohl(tcp->th_ack));
     fprintf(stdout,"[src port %u] [dst port %u] ", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
@@ -193,7 +199,8 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
                 (tcp->syn ? 'S' : '*'),
                 (tcp->fin ? 'F' : '*'));
 
-    fprintf(output_file,"%d,%d", ntohs(tcp->th_sport), ntohs(tcp->th_dport));            
+    fprintf(output_file,"%d,%d,", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
+    fprintf(output_file,"%ld.%06ld", timestamp.tv_sec, timestamp.tv_usec);            
 }
 
 
@@ -203,11 +210,14 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
  u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
     const struct udphdr* udp;
     
+    struct timeval timestamp = pkthdr->ts;
+    
     udp = (struct udphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
     fprintf(stdout, "UDP: [src port %d] [dst port %d]", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
     fprintf(stdout, " [datagram len %d] [chksum %d]\n" , ntohs(udp->uh_ulen), ntohs(udp->uh_ulen));
 
-    fprintf(output_file,"%d,%d", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
+    fprintf(output_file,"%d,%d,", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
+    fprintf(output_file,"%ld.%06ld", timestamp.tv_sec, timestamp.tv_usec);
 
  }
 
