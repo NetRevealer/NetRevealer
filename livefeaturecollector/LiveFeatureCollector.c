@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <errno.h>
+#include <string.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -169,7 +171,6 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
 
     fprintf(stdout,"%s, ",hostIP);
     cmp = strcmp(hostIP,inet_ntoa(iph->ip_src));
-    fprintf(stdout,"%d \n",cmp);
     if(cmp == 0){
         is_forward = true;
     } else{
