@@ -171,6 +171,8 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
 
     fprintf(stdout,"%s, ",hostIP);
     cmp = strcmp(hostIP,inet_ntoa(iph->ip_src));
+
+
     if(cmp == 0){
         is_forward = true;
     } else{

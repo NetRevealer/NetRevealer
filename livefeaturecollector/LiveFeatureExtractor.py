@@ -87,6 +87,7 @@ def extract_packets(file_path):
                 packets.append(packet)
             except:
                 pass
+            
         packets.sort(key=lambda packet: packet[0])    
 
     return packets
