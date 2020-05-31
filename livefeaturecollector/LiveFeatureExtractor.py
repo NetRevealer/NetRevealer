@@ -82,8 +82,12 @@ def extract_packets(file_path):
 
         for pack in raw_packets:
             values = pack.split(",")
-            packet = ["-".join(values[1:3]+values[4:6]),values[0],int(values[3]),float(values[-1])]
-            packets.append(packet)
+            try:
+                packet = ["-".join(values[1:3]+values[4:6]),values[0],int(values[3]),float(values[-1])]
+                packets.append(packet)
+            except:
+                pass
+            
         packets.sort(key=lambda packet: packet[0])    
 
     return packets
