@@ -232,7 +232,15 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
     } else{
         fprintf(output_file,"%d,%d,", ntohs(tcp->th_dport), ntohs(tcp->th_sport));
     }
-    fprintf(output_file,"%ld.%06ld", timestamp.tv_sec, timestamp.tv_usec);            
+    fprintf(output_file,"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
+
+    fprintf(output_file,"%c%c%c%c%c%c",
+                (tcp->urg ? 'U' : '*'),
+                (tcp->ack ? 'A' : '*'),
+                (tcp->psh ? 'P' : '*'),
+                (tcp->rst ? 'R' : '*'),
+                (tcp->syn ? 'S' : '*'),
+                (tcp->fin ? 'F' : '*'));            
 }
 
 
@@ -252,7 +260,8 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
     } else{
         fprintf(output_file,"%d,%d,", ntohs(udp->uh_dport), ntohs(udp->uh_sport));
     }
-    fprintf(output_file,"%ld.%06ld", timestamp.tv_sec, timestamp.tv_usec);
+    fprintf(output_file,"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
+    fprintf(output_file,"*");
 
  }
 

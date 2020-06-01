@@ -18,28 +18,35 @@ class Flow_Stat_Features():
         self.totalIAT = 0
         self.meanIAT = 0
         self.duration = 0
+        self.urgCount = 0
+        self.ackCount = 0
+        self.pshCount = 0
+        self.rstCount = 0
+        self.synCount = 0
+        self.finCount = 0
 
     def get_values(self):
 
         return [self.nbpackets, self.totallen, self.maxlen, self.minlen, self.meanlen,
-                self.FistTS, self.LastTS, self.maxIAT, self.minIAT, self.totalIAT, self.meanIAT, self.duration]
+                self.FistTS, self.LastTS, self.maxIAT, self.minIAT, self.totalIAT, self.meanIAT, self.duration,
+                self.urgCount, self.ackCount, self.pshCount, self.rstCount, self.synCount, self.finCount]
 
 
     def update_values(self,packet):
         self.nbpackets += 1
-        self.totallen += packet[-2]
+        self.totallen += packet[2]
 
-        self.maxlen = max(packet[-2], self.maxlen)
+        self.maxlen = max(packet[2], self.maxlen)
 
-        self.minlen = min(packet[-2], self.minlen)
+        self.minlen = min(packet[2], self.minlen)
 
         self.meanlen = self.totallen / self.nbpackets
 
         if self.nbpackets == 1 :
-            self.FistTS = packet[-1]
+            self.FistTS = packet[3]
             
         else:
-            IAT = packet[-1] - self.LastTS
+            IAT = packet[3] - self.LastTS
 
             self.totalIAT += IAT
 
@@ -49,9 +56,26 @@ class Flow_Stat_Features():
 
             self.meanIAT = self.totalIAT / (self.nbpackets-1)
 
-        self.LastTS = packet[-1]
-        self.duration = self.LastTS - self.FistTS 
+        self.LastTS = packet[3]
+        self.duration = self.LastTS - self.FistTS
 
+        if('U' in packet[4]):
+            self.urgCount += 1
+
+        if('A' in packet[4]):
+            self.ackCount += 1
+
+        if('P' in packet[4]):
+            self.pshCount += 1
+
+        if('R' in packet[4]):
+            self.rstCount += 1
+
+        if('S' in packet[4]):
+            self.synCount += 1
+
+        if('F' in packet[4]):
+            self.finCount += 1                    
 
 
 class Flow():
@@ -83,7 +107,7 @@ def extract_packets(file_path):
         for pack in raw_packets:
             values = pack.split(",")
             try:
-                packet = ["-".join(values[1:3]+values[4:6]),values[0],int(values[3]),float(values[-1])]
+                packet = ["-".join(values[1:3]+values[4:6]),values[0],int(values[3]),float(values[6]),values[7]]
                 packets.append(packet)
             except:
                 pass
@@ -137,4 +161,3 @@ def main():
     for f in flows:
         x = f.get_features()
         print(*x)
-        
