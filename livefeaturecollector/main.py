@@ -1,0 +1,3 @@
+import LiveFeatureExtractor
+
+LiveFeatureExtractor.main()
