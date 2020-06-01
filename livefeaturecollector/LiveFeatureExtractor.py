@@ -158,7 +158,6 @@ def extract_flows(packets):
 def main():
     packs = extract_packets("out.csv")
     flows = extract_flows(packs)
-    print(len(flows))
     for f in flows:
         x = f.get_features()
         print(*x)
