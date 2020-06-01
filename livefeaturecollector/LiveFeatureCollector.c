@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <errno.h>
+#include <string.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -27,6 +29,10 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <sys/time.h>
+
+#include <stdbool.h>
+
 
 /* tcpdump header (ether.h) defines ETHER_HDRLEN) */
 #ifndef ETHER_HDRLEN 
@@ -36,9 +42,15 @@
 
 u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet);
 u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
-u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
-u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
+u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet,bool direction);
+u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet,bool direction);
+
 FILE *output_file;
+
+char host[256];
+struct hostent *host_entry;
+char hostIP[18];
+int hostname;
 
 // control signals : Ctrl + c
 void sigintHandler(int sig_num) 
@@ -67,7 +79,7 @@ void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
     }else if(type == ETHERTYPE_REVARP){
         /* handle reverse arp packet */
     }
-    
+
 }
 
 /* handle ethernet packets when captured.
@@ -77,6 +89,8 @@ u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_
     u_int length = pkthdr->len;
     struct ether_header *eptr;  /* net/ethernet.h */
     u_short ether_type;
+
+    struct timeval timestamp = pkthdr->ts;
 
     if (caplen < ETHER_HDRLEN){
         fprintf(stdout,"Packet length less than ethernet header length\n");
@@ -90,6 +104,7 @@ u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_
     /* Lets print SOURCE DEST TYPE LENGTH */
     printf("----------------------------------------------------------------------------\n");
     fprintf(stdout,"ETH: ");
+    fprintf(stdout,"%ld.%06ld\n", timestamp.tv_sec, timestamp.tv_usec);
     fprintf(stdout,"%s ", ether_ntoa((struct ether_addr*)eptr->ether_shost));
     fprintf(stdout,"%s ", ether_ntoa((struct ether_addr*)eptr->ether_dhost));
 
@@ -118,6 +133,8 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
     char *protocol = "unknown" ; /* for future use to handle tcp and udp headers ... */
 
     int len;
+    bool is_forward; // true for forward and false for backword packets
+    int cmp; 
 
     /* jump pass the ethernet header */
     iph = (struct ip*)(packet + sizeof(struct ether_header));
@@ -150,6 +167,18 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
         printf("\ntruncated IP - %d bytes missing\n",len - length);
     }
 
+    /*determine the direction of the packet*/
+
+    fprintf(stdout,"%s, ",hostIP);
+    cmp = strcmp(hostIP,inet_ntoa(iph->ip_src));
+
+
+    if(cmp == 0){
+        is_forward = true;
+    } else{
+        is_forward = false;
+    }
+
     /* Check to see if we have the first fragment */
     off = ntohs(iph->ip_off);
     /* aka no 1's in first 13 bits */
@@ -158,14 +187,17 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
         fprintf(stdout,"IP: ");
         fprintf(stdout,"%s ", inet_ntoa(iph->ip_src));
         fprintf(stdout,"%s [hdr len %d] [version %d] [len %d] [off %d]\n", inet_ntoa(iph->ip_dst), hlen,version,len,off);
-        // printf("Protocol type : %d\n", protocol_id);
-        fprintf(output_file,"%d,%s,",protocol_id,inet_ntoa(iph->ip_src));
-        fprintf(output_file,"%s,%d,",inet_ntoa(iph->ip_dst),len);
+
+        if (is_forward){
+            fprintf(output_file,"F,%d,%s,%d,",protocol_id,inet_ntoa(iph->ip_dst),len);
+        } else{
+            fprintf(output_file,"B,%d,%s,%d,",protocol_id,inet_ntoa(iph->ip_src),len);
+        }
     }
     if (protocol_id == 6){
-        handle_TCP(args,pkthdr,packet);
+        handle_TCP(args,pkthdr,packet,is_forward);
     } else if (protocol_id == 17){
-        handle_UDP(args,pkthdr,packet);
+        handle_UDP(args,pkthdr,packet,is_forward);
     }
     
 
@@ -178,9 +210,11 @@ u_char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pa
  * 
 */
 
-u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
+u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet,bool is_forward){
     const struct tcphdr* tcp;
     
+    struct timeval timestamp = pkthdr->ts;
+
     tcp = (struct tcphdr*)(packet + sizeof(struct ip) + sizeof(struct ether_header));
     fprintf(stdout,"TCP: [seq %u] [ack %u] ", ntohl(tcp->th_seq), ntohl(tcp->th_ack));
     fprintf(stdout,"[src port %u] [dst port %u] ", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
@@ -193,21 +227,32 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
                 (tcp->syn ? 'S' : '*'),
                 (tcp->fin ? 'F' : '*'));
 
-    fprintf(output_file,"%d,%d", ntohs(tcp->th_sport), ntohs(tcp->th_dport));            
+    if(is_forward){
+        fprintf(output_file,"%d,%d,", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
+    } else{
+        fprintf(output_file,"%d,%d,", ntohs(tcp->th_dport), ntohs(tcp->th_sport));
+    }
+    fprintf(output_file,"%ld.%06ld", timestamp.tv_sec, timestamp.tv_usec);            
 }
 
 
 /**
  * handle udp packets
 */
- u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
+ u_char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet,bool is_forward){
     const struct udphdr* udp;
+    
+    struct timeval timestamp = pkthdr->ts;
     
     udp = (struct udphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
     fprintf(stdout, "UDP: [src port %d] [dst port %d]", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
     fprintf(stdout, " [datagram len %d] [chksum %d]\n" , ntohs(udp->uh_ulen), ntohs(udp->uh_ulen));
-
-    fprintf(output_file,"%d,%d", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
+    if(is_forward){
+        fprintf(output_file,"%d,%d,", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
+    } else{
+        fprintf(output_file,"%d,%d,", ntohs(udp->uh_dport), ntohs(udp->uh_sport));
+    }
+    fprintf(output_file,"%ld.%06ld", timestamp.tv_sec, timestamp.tv_usec);
 
  }
 
@@ -221,6 +266,12 @@ int main(int argc,char **argv){
     bpf_u_int32 maskp;          /* subnet mask               */
     bpf_u_int32 netp;           /* ip                        */
     u_char* args = NULL;
+    
+    hostname = gethostname(host, sizeof(host)); //find the host name
+    host_entry = gethostbyname(host); //find host information
+    strcpy(hostIP,inet_ntoa(*((struct in_addr*) host_entry->h_addr_list[0]))); //Convert into IP string
+    
+    
 
     /* Options must be passed in as a string */
     if(argc < 2){ 
@@ -230,7 +281,7 @@ int main(int argc,char **argv){
 
     signal(SIGINT, sigintHandler);
     output_file = fopen("out.csv","a");
-    // fprintf(output_file,"protocol,ip dst,ip src,len,flags,");
+    
 
     /* ask pcap for the network address and mask of the device */
     pcap_lookupnet(dev,&netp,&maskp,errbuf);
