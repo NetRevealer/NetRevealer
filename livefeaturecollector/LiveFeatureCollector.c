@@ -234,13 +234,15 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
     }
     fprintf(output_file,"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
 
-    fprintf(output_file,"%c%c%c%c%c%c",
+    fprintf(output_file,"%c%c%c%c%c%c,",
                 (tcp->urg ? 'U' : '*'),
                 (tcp->ack ? 'A' : '*'),
                 (tcp->psh ? 'P' : '*'),
                 (tcp->rst ? 'R' : '*'),
                 (tcp->syn ? 'S' : '*'),
-                (tcp->fin ? 'F' : '*'));            
+                (tcp->fin ? 'F' : '*'));
+    fprintf(output_file, "%d,", ntohs(tcp->th_win));
+    fprintf(output_file, "%u,%u", ntohl(tcp->th_seq), ntohl(tcp->th_ack));          
 }
 
 
@@ -261,7 +263,7 @@ u_char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* p
         fprintf(output_file,"%d,%d,", ntohs(udp->uh_dport), ntohs(udp->uh_sport));
     }
     fprintf(output_file,"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
-    fprintf(output_file,"*");
+    fprintf(output_file,"*,0,0,0");
 
  }
 
@@ -289,7 +291,7 @@ int main(int argc,char **argv){
     }
 
     signal(SIGINT, sigintHandler);
-    output_file = fopen("out.csv","a");
+    output_file = fopen("out.csv","w");
     
 
     /* ask pcap for the network address and mask of the device */
