@@ -1,6 +1,11 @@
 """ Extract traffic flow features from a CSV file """
 
-import math 
+import math
+import sys
+import csv
+
+file_path = ''
+csvheader = ''
 
 class Flow_Stat_Features():
 
@@ -155,9 +160,26 @@ def extract_flows(packets):
 
     return flows
 
+def write_output(file_path, flows):
+    output_file = file_path[:-3] + '_flows.csv'
+    with open(output_file, 'w') as output:
+        writer = csv.writer(output)
+        writer.writerow(csvheader)
+        for f in flows:
+            writer.writerow(f)
+
 def main():
-    packs = extract_packets("out.csv")
+    try:
+        file_path = sys.argv[1]
+    except IndexError:
+        print('[!] Please enter the path of the captured packets (csv) you want extract flows from.')
+        exit()
+    
+    packs = extract_packets(file_path)
     flows = extract_flows(packs)
     for f in flows:
         x = f.get_features()
         print(*x)
+
+if __name__== '__main__':
+    main()
