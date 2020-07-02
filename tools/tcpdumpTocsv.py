@@ -9,7 +9,8 @@ command : tcpdump -nvvv
 import csv
 import sys
 
-csvheader = ['pktWay', 'proto', 'srvIP', 'pktlen', 'srcprt', 'dstprt', 'timeStamp', 'synflag', 'ackflag', 'finflag', 'resetflag', 'pushflag', 'urgflag', 'pktwin', 'pktseq', 'pktack']
+csvheader = ['pktWay', 'proto', 'srvIP', 'pktlen', 'srcprt', 'dstprt', 'timeStamp', 'synflag'
+, 'ackflag', 'finflag', 'resetflag', 'pushflag', 'urgflag', 'pktwin', 'pktseq', 'pktack']
 pktWay = ''
 srcprt = ''
 dstprt = ''
@@ -77,13 +78,13 @@ for p in preprocess:
 
     if (p[13] == 'TCP'):
         proto = 6
-        pktseq = p[25][0:-1]
+        pktseq = p[25][0:-1].split(':')[0]
         pktack = p[27][0:-1]
         pktwin = p[29][0:-1]
         
         if ('S' in p[20]):
             synflag = 1
-        if ('A' in p[20]):
+        if ('.' in p[20]):
             ackflag = 1
         if ('F' in p[20]):
             finflag = 1

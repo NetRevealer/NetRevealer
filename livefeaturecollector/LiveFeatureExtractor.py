@@ -88,7 +88,7 @@ class Flow_Stat_Features():
         if('U' in packet[4]):
             self.urgCount += 1
 
-        if('A' in packet[4]):
+        if('.' in packet[4]):
             self.ackCount += 1
 
         if('P' in packet[4]):
@@ -206,13 +206,23 @@ def extract_flows(packets):
 
     return flows
 
-def write_output(file_path, flows):
-    output_file = file_path[:-3] + '_flows.csv'
+def write_output(file_path, flows, csvheader):
+    output_file = file_path[:-4] + '_flows.csv'
     with open(output_file, 'w') as output:
         writer = csv.writer(output)
         writer.writerow(csvheader)
+
         for f in flows:
-            writer.writerow(f)
+            f_flattened = [f.get_features()[0]]
+            concat_lists(f_flattened, f.get_features()[1])
+            concat_lists(f_flattened, f.get_features()[2])
+            concat_lists(f_flattened, f.get_features()[3])
+            writer.writerow(f_flattened)
+
+def concat_lists(list1, list2):
+    for l2 in list2:
+        list1.append(l2)
+
 
 def main():
     try:
