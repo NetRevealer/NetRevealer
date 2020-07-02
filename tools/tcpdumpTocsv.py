@@ -9,26 +9,21 @@ command : tcpdump -nvvv
 import csv
 import sys
 
-csvheader = ['pktWay', 'proto', 'srvIP', 'pktlen', 'srcprt', 'dstprt', 'timeStamp', 'synflag'
-, 'ackflag', 'finflag', 'resetflag', 'pushflag', 'urgflag', 'pktwin', 'pktseq', 'pktack']
+csvheader = ['pktWay', 'proto', 'srvIP', 'pktlen', 'hostprt', 'srvprt', 'timeStamp', 'flags'
+, 'pktwin', 'pktseq', 'pktack']
 pktWay = ''
-srcprt = ''
-dstprt = ''
+hostprt = ''
+srvprt = ''
 srvIP = ''
 hostIP = ''
 timeStamp = ''
 pktlen = ''
 cksum = ''
-proto = 0
+proto = -1
 pktseq = 0
 pktack = 0
 pktwin = 0
-synflag = 0
-ackflag = 0
-finflag = 0
-resetflag = 0
-pushflag = 0
-urgflag = 0
+flags = ''
 
 input_path = ''
 output_file = ''
@@ -53,47 +48,48 @@ with open(input_path, 'r') as file:
         j += 1
 
 for p in preprocess:
-    synflag = 0
-    ackflag = 0
-    finflag = 0
-    resetflag = 0
-    pushflag = 0
-    urgflag = 0
+    flags = ''
     pktseq = 0
     pktack = 0
     pktwin = 0
     x = list()
     timeStamp = p[0]
     pktlen = p[16].split(')')[0]
-    srcprt = p[16].split('.')[-1].split(':')[0]
-    dstprt = p[18].split('.')[-1].split(':')[0]
+    
 
     if (p[16].split(')')[1][0:3] == '192'):
         pktWay = 'F'
         srvIP = '.'.join(p[18].split('.')[:-1])
+        hostprt = p[16].split('.')[-1].split(':')[0]
+        srvprt = p[18].split('.')[-1].split(':')[0]
         
     else:
         pktWay = 'B'
         srvIP = '.'.join(p[16].split(')')[1].split('.')[:-1])
+        srvprt = p[16].split('.')[-1].split(':')[0]
+        hostprt = p[18].split('.')[-1].split(':')[0]
 
     if (p[13] == 'TCP'):
         proto = 6
         pktseq = p[25][0:-1].split(':')[0]
-        pktack = p[27][0:-1]
-        pktwin = p[29][0:-1]
+        if 'ack' in p:
+            pktack = p[27][0:-1]
+            pktwin = p[29][0:-1]
+        else:
+            pktwin = p[27][0:-1]
         
         if ('S' in p[20]):
-            synflag = 1
+            flags += 'S'
         if ('.' in p[20]):
-            ackflag = 1
+            flags += '.'
         if ('F' in p[20]):
-            finflag = 1
+            flags += 'F'
         if ('R' in p[20]):
-            resetflag = 1
+            flags += 'R'
         if ('P' in p[20]):
-            pushflag = 1
+            flags += 'P'
         if ('U' in p[20]):
-            urgflag = 1
+            flags += 'U'
         
     elif (p[13] == 'UDP'):
         proto = 17
@@ -104,15 +100,10 @@ for p in preprocess:
     x.append(proto)
     x.append(srvIP)
     x.append(pktlen)
-    x.append(srcprt)
-    x.append(dstprt)
+    x.append(hostprt)
+    x.append(srvprt)
     x.append(timeStamp)
-    x.append(synflag)
-    x.append(ackflag)
-    x.append(finflag)
-    x.append(resetflag)
-    x.append(pushflag)
-    x.append(urgflag)
+    x.append(flags)
     x.append(pktwin)
     x.append(pktseq)
     x.append(pktack)
