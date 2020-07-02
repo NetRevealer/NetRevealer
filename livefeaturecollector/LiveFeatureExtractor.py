@@ -167,7 +167,46 @@ def extract_packets(file_path):
 
     return packets
 
+""" flow labeling from packets """    
 
+def flow_labeling(packets, limit=39):
+
+    flows = []
+    flow_in_process, l = packets[0][0], 0
+
+    flow = Flow(flow_in_process)
+
+    for packet in packets:
+        
+        if(packet[0] == flow_in_process and l < limit):
+
+            flow.global_features.update_values(packet)
+
+            if packet[1] == 'F':
+                flow.forward_features.update_values(packet)
+
+            elif packet[1] == 'B':
+                flow.backward_features.update_values(packet)   
+
+            l += 1
+            
+        else:
+            if (flow.get_features()[1][0] > limit):
+                flows.append(flow)
+            flow_in_process, l = packet[0], 0
+            flow = Flow(flow_in_process)
+            flow.global_features.update_values(packet)
+
+            if packet[1] == 'F':
+                flow.forward_features.update_values(packet)
+                
+            elif packet[1] == 'B':
+                flow.backward_features.update_values(packet)
+    
+    if (flow.get_features()[1][0] > limit):
+                flows.append(flow)
+
+    return flows
 
 """ extracting flow features from packets """    
 
