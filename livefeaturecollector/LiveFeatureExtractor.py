@@ -2,6 +2,7 @@
 
 import math
 import sys
+import os
 import csv
 
 file_path = ''
@@ -245,17 +246,24 @@ def extract_flows(packets):
 
     return flows
 
-def write_output(file_path, flows, csvheader):
-    output_file = file_path[:-4] + '_flows.csv'
-    with open(output_file, 'w') as output:
+def write_output(output_file, flows, csvheader, lable=''):
+    #output_file = file_path[:-4] + '_flows.csv'
+    with open(output_file, 'a') as output:
+        is_empty = (os.stat(output_file).st_size == 0)
         writer = csv.writer(output)
-        writer.writerow(csvheader)
+
+        if(is_empty):
+            writer.writerow(csvheader)
 
         for f in flows:
             f_flattened = [f.get_features()[0]]
             concat_lists(f_flattened, f.get_features()[1])
             concat_lists(f_flattened, f.get_features()[2])
             concat_lists(f_flattened, f.get_features()[3])
+
+            if (lable != ''):
+                f_flattened.append(lable)
+
             writer.writerow(f_flattened)
 
 def concat_lists(list1, list2):

@@ -2,6 +2,7 @@ import sys
 sys.path.append('./livefeaturecollector')
 from LiveFeatureExtractor import *
 
+
 file_path = ''
 labeling = False
 csvheader = ['flowID', 'nbpackets', 'totallen', 'maxlen', 'minlen', 'meanlen', 'FistTS'
@@ -19,21 +20,26 @@ csvheader = ['flowID', 'nbpackets', 'totallen', 'maxlen', 'minlen', 'meanlen', '
 , 'B_meanseq', 'B_totalack', 'B_maxack', 'B_minack', 'B_meanack']
 
 
-try:
-    file_path = sys.argv[1]
-    labeling = sys.argv[2].lower() == 'true'
-except IndexError:
-    print('python3 path labeling[true|false]')
-    exit()
+
+file_path = sys.argv[1]
+output_file = sys.argv[2]
+
+if len(sys.argv) > 3:
+    labeling = True
+
 
 
 def main():
     packs = extract_packets(file_path)
     if (labeling):
         flows = flow_labeling(packs)
+        csvheader.append('Label')
+        label = sys.argv[3]
+        write_output(output_file, flows, csvheader, label)
+
     else:
         flows = extract_flows(packs)
-    write_output(file_path, flows, csvheader)
+        write_output(output_file, flows, csvheader)
 
 if __name__ == '__main__':
     main()
