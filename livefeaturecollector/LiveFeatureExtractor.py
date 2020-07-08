@@ -2,6 +2,7 @@
 
 import math
 import sys
+import os
 import csv
 
 file_path = ''
@@ -245,23 +246,50 @@ def extract_flows(packets):
 
     return flows
 
-def write_output(file_path, flows, csvheader):
-    output_file = file_path[:-4] + '_flows.csv'
-    with open(output_file, 'w') as output:
+def write_output(output_file, flows, csvheader, lable=''):
+    #output_file = file_path[:-4] + '_flows.csv'
+    with open(output_file, 'a') as output:
+        is_empty = (os.stat(output_file).st_size == 0)
         writer = csv.writer(output)
-        writer.writerow(csvheader)
+
+        if(is_empty):
+            writer.writerow(csvheader)
 
         for f in flows:
             f_flattened = [f.get_features()[0]]
             concat_lists(f_flattened, f.get_features()[1])
             concat_lists(f_flattened, f.get_features()[2])
             concat_lists(f_flattened, f.get_features()[3])
+
+            if (lable != ''):
+                f_flattened.append(lable)
+
             writer.writerow(f_flattened)
 
 def concat_lists(list1, list2):
     for l2 in list2:
         list1.append(l2)
 
+
+def extractFeatures_fromFlow(flow):
+    raw_packets = flow.splitlines()
+    raw_packets = [item for item in raw_packets if len(item) > 1]
+    packets = []
+
+    for pack in raw_packets:
+        values = pack.split(",")
+        try:
+            packet = ["-".join(values[1:3]+values[4:6]),values[0],int(values[3]),float(values[6]),values[7],int(values[8]),
+            int(values[9]),int(values[10])]
+            packets.append(packet)
+        except:
+            pass
+        
+    packets.sort(key=lambda packet: packet[0])
+    flows = extract_flows(packets)
+    
+    print(flows[0].get_features())
+    
 
 def main():
     try:
