@@ -47,6 +47,7 @@ char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*pack
 
 FILE *output_file;
 PyObject* Function;
+PyObject* pargs;
 
 char host[256];
 struct hostent *host_entry;
@@ -64,37 +65,13 @@ struct flow* head = NULL;
 /* Given a reference (pointer to pointer) to the head of a list 
    and an int, inserts a new node on the front of the list. */
 void push(struct flow** head_ref, char new_data[216]){ 
-    struct flow* new_flow = (struct Flow*) malloc(sizeof(struct flow));
+    struct flow* new_flow = (struct flow*) malloc(sizeof(struct flow));
     sprintf(new_flow->pkts, new_data);
     new_flow->len = 1;
     new_flow->next = (*head_ref); 
     (*head_ref)    = new_flow;
 }
 
-void update_pkts(struct flow *f, char data[216]){
-    sprintf(f->pkts + strlen(f->pkts), data);
-    f->len++;
-    if (f->len == 40){
-        printf("%s\n","================||40 packets of flow||================");
-        // printf("%s", f->pkts);
-        deleteFlow(&head, 40);
-        PyObject_CallObject(Function, NULL);
-    }
-}
-
-void searchflow(struct flow** head_ref, char data[216], char addr[19], char port[12]){
-    struct flow* temp = *head_ref;
-    while (temp != NULL){ 
-        char *res1 = strstr(temp->pkts, addr);
-        char *res2 = strstr(temp->pkts, port);
-        if (res1 != NULL && res2 != NULL){
-            update_pkts(temp, data);
-            return;
-        }
-        temp = temp->next; 
-    }
-    push(&head, data);
-}
 
 void deleteFlow(struct flow **head_ref, int len){ 
     // Store head node 
@@ -124,6 +101,34 @@ void deleteFlow(struct flow **head_ref, int len){
   
     free(temp);  // Free memory 
 } 
+
+void update_pkts(struct flow *f, char data[216]){
+    sprintf(f->pkts + strlen(f->pkts), data);
+    f->len++;
+    if (f->len == 40){
+        // printf("%s\n","================||40 packets of flow||================");
+        // printf("%s", f->pkts);
+        pargs = Py_BuildValue("(s)", f->pkts);
+        PyObject_CallObject(Function, pargs);
+        deleteFlow(&head, 40);
+        
+    }
+}
+
+void searchflow(struct flow** head_ref, char data[216], char addr[19], char port[12]){
+    struct flow* temp = *head_ref;
+    while (temp != NULL){ 
+        char *res1 = strstr(temp->pkts, addr);
+        char *res2 = strstr(temp->pkts, port);
+        if (res1 != NULL && res2 != NULL){
+            update_pkts(temp, data);
+            return;
+        }
+        temp = temp->next; 
+    }
+    push(&head, data);
+}
+
 
 // control signals : Ctrl + c
 void sigintHandler(int sig_num) 
@@ -405,15 +410,15 @@ int main(int argc,char **argv){
     }
 
     /* 2nd: Getting reference to the function */
-    Function = PyObject_GetAttrString(Module, (char*)"test");
+    Function = PyObject_GetAttrString(Module, (char*)"extractFeatures_fromFlow");
     if (!Function) {
         PyErr_Print();
         printf("Pass valid argument to link_list()\n");
     }
 
     // Py_Finalize();
-
     
+
     hostname = gethostname(host, sizeof(host)); //find the host name
     host_entry = gethostbyname(host); //find host information
     strcpy(hostIP,inet_ntoa(*((struct in_addr*) host_entry->h_addr_list[0]))); //Convert into IP string

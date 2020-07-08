@@ -271,6 +271,26 @@ def concat_lists(list1, list2):
         list1.append(l2)
 
 
+def extractFeatures_fromFlow(flow):
+    raw_packets = flow.splitlines()
+    raw_packets = [item for item in raw_packets if len(item) > 1]
+    packets = []
+
+    for pack in raw_packets:
+        values = pack.split(",")
+        try:
+            packet = ["-".join(values[1:3]+values[4:6]),values[0],int(values[3]),float(values[6]),values[7],int(values[8]),
+            int(values[9]),int(values[10])]
+            packets.append(packet)
+        except:
+            pass
+        
+    packets.sort(key=lambda packet: packet[0])
+    flows = extract_flows(packets)
+    
+    print(flows[0].get_features())
+    
+
 def main():
     try:
         file_path = sys.argv[1]
