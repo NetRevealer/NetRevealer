@@ -70,10 +70,10 @@ class Flow_Stat_Features():
         self.meanlen = self.totallen / self.nbpackets
 
         if self.nbpackets == 1 :
-            self.FistTS = packet[3]
+            self.FistTS = packet[3] * 10000
             
         else:
-            IAT = packet[3] - self.LastTS
+            IAT = (packet[3] * 10000) - self.LastTS
 
             self.totalIAT += IAT
 
@@ -83,7 +83,7 @@ class Flow_Stat_Features():
 
             self.meanIAT = self.totalIAT / (self.nbpackets-1)
 
-        self.LastTS = packet[3]
+        self.LastTS = packet[3] * 10000
         self.duration = self.LastTS - self.FistTS
 
         if('U' in packet[4]):
@@ -193,7 +193,9 @@ def flow_labeling(packets, limit=39):
             
         else:
             if (flow.get_features()[1][0] > limit):
-                flows.append(flow)
+                if ((flow.get_features()[2][0] > 1) and (flow.get_features()[3][0] > 1)):
+                    flows.append(flow)
+
             flow_in_process, l = packet[0], 0
             flow = Flow(flow_in_process)
             flow.global_features.update_values(packet)
@@ -205,7 +207,8 @@ def flow_labeling(packets, limit=39):
                 flow.backward_features.update_values(packet)
     
     if (flow.get_features()[1][0] > limit):
-                flows.append(flow)
+        if ((flow.get_features()[2][0] > 1) and (flow.get_features()[3][0] > 1)):
+            flows.append(flow)
 
     return flows
 
@@ -231,7 +234,8 @@ def extract_flows(packets):
                 flow.backward_features.update_values(packet)   
 
         else:
-            flows.append(flow)
+            if ((flow.get_features()[2][0] > 1) and (flow.get_features()[3][0] > 1)):
+                flows.append(flow)
 
             flow_in_process = packet[0]
             flow = Flow(flow_in_process)
@@ -242,7 +246,9 @@ def extract_flows(packets):
                 
             elif packet[1] == 'B':
                 flow.backward_features.update_values(packet)
-    flows.append(flow)    
+
+    if ((flow.get_features()[2][0] > 1) and (flow.get_features()[3][0] > 1)):            
+        flows.append(flow)    
 
     return flows
 
