@@ -4,9 +4,14 @@ import math
 import sys
 import os
 import csv
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
 
 file_path = ''
 csvheader = ''
+Apps = ['Anghami','Youtube','Instagram','Skype', 'Googlemeet', 'Twitch']
 
 class Flow_Stat_Features():
 
@@ -278,6 +283,8 @@ def concat_lists(list1, list2):
 
 
 def extractFeatures_fromFlow(flow):
+    ignored_cols = [0, 1, 6, 7, 13, 23, 24, 25, 26, 27, 28, 29, 30, 36, 37, 
+        43, 53, 54, 55, 56, 57, 58, 59, 60, 66, 67, 73, 76, 83, 84, 85, 86, 87, 88, 89, 90]
     raw_packets = flow.splitlines()
     raw_packets = [item for item in raw_packets if len(item) > 1]
     packets = []
@@ -294,8 +301,38 @@ def extractFeatures_fromFlow(flow):
     packets.sort(key=lambda packet: packet[0])
     flows = extract_flows(packets)
     
-    print(flows[0].get_features())
+    f_flattened = [flows[0].get_features()[0]]
+    concat_lists(f_flattened, flows[0].get_features()[1])
+    concat_lists(f_flattened, flows[0].get_features()[2])
+    concat_lists(f_flattened, flows[0].get_features()[3])
     
+    
+    f_flattened = [f_flattened[i] for i in range(91) if i not in ignored_cols]
+    flow = torch.Tensor(f_flattened)
+    output = model(flow.float())
+    _, pred = torch.max(output, 0)
+    print('========|{}|========'.format(Apps[pred]))
+
+
+class Network(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+        self.fc1 = nn.Linear(55, 32)
+        self.fc2 = nn.Linear(32, 16)
+        self.fc3 = nn.Linear(16, 6)
+        
+    def forward(self, x):
+        # Pass the input tensor through each of our operations
+        
+        
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.log_softmax(self.fc3(x), dim=0)
+        
+        return x
+
+
 
 def main():
     try:
@@ -310,5 +347,28 @@ def main():
         x = f.get_features()
         print(*x)
 
+if __name__ == 'LiveFeatureExtractor':
+    print('[*] IN: LiveFeatureExtractor')
+    model = Network()
+    model.load_state_dict(torch.load('/home/sysbot/Desktop/NetDump/models/NetDum_MLP_statedict.pt'))
+    print('[*] OUT: LiveFeatureExtractor')
+
+
 if __name__== '__main__':
-    main()
+    print('[*] IN: __main__')
+    model = Network()
+    model.load_state_dict(torch.load('/home/sysbot/Desktop/NetDump/models/NetDum_MLP_statedict.pt'))
+    f_flattened = [33676, 1492, 52, 841.9, 878.900390625, 0.318359375, 1455.220703125, 37.31335136217949, 1455.220703125, 0, 1, 0, 0, 0, 32061, 1311, 350, 801.525, 19, 2344, 1408, 52, 123.36842105263158, 879.548828125, 11.23046875, 1405.041015625, 78.05783420138889, 1405.041015625, 0, 1, 0, 0, 0, 24711, 1311, 1300, 1300.578947368421, 21, 31332, 1492, 1492, 1492.0, 52.568359375, 11.740234375, 576.3203125, 28.816015625, 576.3203125, 0, 0, 0, 0, 7350, 350, 350, 350.0]
+    f2 = [[35199], [1470], [52], [879.975], [441.30078125], [0.359375], [801.640625], [20.55488782051282], [801.640625], [0], [7], [0], [0], [0], [35113], [2163], [265], [877.825], [15], [1174], [206], [52], [78.26666666666667], [481.640625], [4.4296875], [774.580078125], [55.3271484375], [774.580078125], [0], [4], [0], [0], [0], [28488], [2163], [1688], [1899.2], [25], [34025], [1470], [52], [1361.0], [27.34765625], [2.2421875], [316.16015625], [13.17333984375], [316.16015625], [0], [3], [0], [0], [6625], [265], [265], [265.0]]
+    print(len(f_flattened))
+    flow = torch.Tensor(f_flattened)
+    
+    output = model(flow.float())
+    print(output)
+    
+    print('here done')
+    _, pred = torch.max(output, 0)
+    print('here done too')
+    print('==========================|{}|======================'.format(pred))
+    print(Apps[pred])
+    

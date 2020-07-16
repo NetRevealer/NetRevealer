@@ -32,7 +32,7 @@
 #include <sys/time.h>
 
 #include <stdbool.h>
-#include <python3.7m/Python.h>
+#include <python3.8/Python.h>
 
 /* tcpdump header (ether.h) defines ETHER_HDRLEN) */
 #ifndef ETHER_HDRLEN 
@@ -46,7 +46,7 @@ char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*pack
 char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet,bool direction);
 
 FILE *output_file;
-PyObject* Function;
+PyObject* extractFeatures_fromFlow;
 PyObject* pargs;
 
 char host[256];
@@ -62,7 +62,7 @@ struct flow{
 };
 char actualport[12];
 char actualaddr[19];
-char actualdirection[2];
+char actualdirection[3];
 struct flow* head = NULL;
 
 /* Given a reference (pointer to pointer) to the head of a list 
@@ -124,11 +124,12 @@ void update_pkts(struct flow *f, char data[216]){
     }
     f->len++;
     if (f->len == 40){
-        printf("%s %d %d\n","================||40 packets of flow||================", f->backward_count, f->forward_count);
-        printf("%s", f->pkts);
+        // printf("%s %d %d\n","================||40 packets of flow||================", f->backward_count, f->forward_count);
+        // printf("%s", f->pkts);
         if (f->backward_count > 1 && f->forward_count > 1){
+            // printf("wow");
             pargs = Py_BuildValue("(s)", f->pkts);
-            PyObject_CallObject(Function, pargs);
+            PyObject_CallObject(extractFeatures_fromFlow, pargs);
         }
         deleteFlow(&head, 40);
 
@@ -412,8 +413,9 @@ int main(int argc,char **argv){
     bpf_u_int32 netp;           /* ip                        */
     u_char* args = NULL;
 
-    Py_Initialize();
 
+    Py_Initialize();
+    
     /* This is to add the path in the code */
     PyObject *sys = PyImport_ImportModule("sys");
     PyObject *path = PyObject_GetAttrString(sys, "path");
@@ -433,8 +435,8 @@ int main(int argc,char **argv){
     }
 
     /* 2nd: Getting reference to the function */
-    Function = PyObject_GetAttrString(Module, (char*)"extractFeatures_fromFlow");
-    if (!Function) {
+    extractFeatures_fromFlow = PyObject_GetAttrString(Module, (char*)"extractFeatures_fromFlow");
+    if (!extractFeatures_fromFlow) {
         PyErr_Print();
         printf("Pass valid argument to link_list()\n");
     }
@@ -446,7 +448,7 @@ int main(int argc,char **argv){
     host_entry = gethostbyname(host); //find host information
     strcpy(hostIP,inet_ntoa(*((struct in_addr*) host_entry->h_addr_list[0]))); //Convert into IP string
     
-    
+
 
     /* Options must be passed in as a string */
     if(argc < 2){ 
