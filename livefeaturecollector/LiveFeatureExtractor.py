@@ -204,7 +204,7 @@ def extract_packets(file_path):
 
 """ extracting flow features from packets """    
 
-def extract_flows(packets, limit=None):
+def extract_flows(packets, limit=0):
 
     flows = []
     flow_in_process, l = packets[0][0], 0
@@ -289,8 +289,10 @@ def extractFeatures_fromFlow(flow):
             pass
         
     packets.sort(key=lambda packet: packet[0])
-    flows = extract_flows(packets)
-
+    try:
+        flows = extract_flows(packets)
+    except Exception as e:
+        print(e)
     flow = flows[0].get_features_flattened()
     flow = np.delete(flow, ignored_cols).astype(float).reshape(1, -1)
     # flow = transform(flow.reshape(1,1,80))
