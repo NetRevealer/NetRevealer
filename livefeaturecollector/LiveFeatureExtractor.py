@@ -202,9 +202,9 @@ def extract_packets(file_path):
 
     return packets
 
-""" flow labeling from packets """    
+""" extracting flow features from packets """    
 
-def flow_labeling(packets, limit=39):
+def extract_flows(packets, limit=None):
 
     flows = []
     flow_in_process, l = packets[0][0], 0
@@ -212,25 +212,26 @@ def flow_labeling(packets, limit=39):
     flow = Flow(flow_in_process)
 
     for packet in packets:
-        
-        if(packet[0] == flow_in_process and l < limit):
 
-            flow.global_features.update_values(packet)
+        if(packet[0] == flow_in_process):
+            if(not limit or l < limit):
 
-            if packet[1] == 'F':
-                flow.forward_features.update_values(packet)
+                flow.global_features.update_values(packet)
 
-            elif packet[1] == 'B':
-                flow.backward_features.update_values(packet)   
+                if packet[1] == 'F':
+                    flow.forward_features.update_values(packet)
 
-            l += 1
-            
+                elif packet[1] == 'B':
+                    flow.backward_features.update_values(packet)   
+
+                l += 1    
+
         else:
-            if (flow.get_features()[1][0] > limit):
+            if((flow.get_features()[1][0] > limit) or not limit):
                 if ((flow.get_features()[2][0] > 1) and (flow.get_features()[3][0] > 1)):
                     flows.append(flow)
 
-            flow_in_process, l = packet[0], 0
+            flow_in_process,l = packet[0], 0
             flow = Flow(flow_in_process)
             flow.global_features.update_values(packet)
 
@@ -239,50 +240,10 @@ def flow_labeling(packets, limit=39):
                 
             elif packet[1] == 'B':
                 flow.backward_features.update_values(packet)
-    
-    if (flow.get_features()[1][0] > limit):
+
+    if ((flow.get_features()[1][0] > limit) or not limit):
         if ((flow.get_features()[2][0] > 1) and (flow.get_features()[3][0] > 1)):
-            flows.append(flow)
-
-    return flows
-
-""" extracting flow features from packets """    
-
-def extract_flows(packets):
-
-    flows = []
-    flow_in_process = packets[0][0]
-
-    flow = Flow(flow_in_process)
-
-    for packet in packets:
-
-        if(packet[0] == flow_in_process):
-
-            flow.global_features.update_values(packet)
-
-            if packet[1] == 'F':
-                flow.forward_features.update_values(packet)
-
-            elif packet[1] == 'B':
-                flow.backward_features.update_values(packet)   
-
-        else:
-            if ((flow.get_features()[2][0] > 1) and (flow.get_features()[3][0] > 1)):
-                flows.append(flow)
-
-            flow_in_process = packet[0]
-            flow = Flow(flow_in_process)
-            flow.global_features.update_values(packet)
-
-            if packet[1] == 'F':
-                flow.forward_features.update_values(packet)
-                
-            elif packet[1] == 'B':
-                flow.backward_features.update_values(packet)
-
-    if ((flow.get_features()[2][0] > 1) and (flow.get_features()[3][0] > 1)):            
-        flows.append(flow)    
+            flows.append(flow)   
 
     return flows
 
@@ -383,14 +344,15 @@ def main():
         print(*x)
 
 if __name__ == 'LiveFeatureExtractor':
+    if len(sys.argv) == 1 :
     # print('[*] IN: LiveFeatureExtractor \n\n')
     # model = Network()
     # model.load_state_dict(torch.load('/home/sysbot/Desktop/NetDump/models/NetDum_MLP_statedict8.pt'))
     # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)])
     # print('[1] model and transform has been created !\n\n')
     # print('[*] OUT: LiveFeatureExtractor')
-    loaded_model = pickle.load(open('models/NetDump_RandomForest.sav', 'rb'))
-    print('[*] model has been created')
+        loaded_model = pickle.load(open('models/NetDump_RandomForest.sav', 'rb'))
+        print('[*] model has been created')
     # scaler = preprocessing.StandardScaler()
     # scaler.scale_ = scaler_scale
     # scaler.mean_ = scaler_mean
