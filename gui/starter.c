@@ -26,47 +26,64 @@
 //   return row;
 // }
 
-// enum {
-//     COL_INDEX = 0,
-//     COL_TYPE,
-//     COL_TX_PACKETS,
-//     COL_RX_PACKETS,
-//     COL_TX_BYTES,
-//     COL_RX_BYTES,
-// };
-
-enum{
-  COL_NAME = 0,
-  COL_AGE,
-  NUM_COLS
+enum {
+    COL_INDEX,
+    COL_TYPE,
+    COL_TX_PACKETS,
+    COL_RX_PACKETS,
+    COL_TX_BYTES,
+    COL_RX_BYTES ,
+    NUM_COLS
 };
+
+// enum{
+//   COL_NAME = 0,
+//   COL_AGE,
+//   NUM_COLS
+// };
 
 static GtkTreeModel * create_and_fill_model (void){
     GtkListStore  *store;
     GtkTreeIter    iter;
+    int i = 0;
 
-    store = gtk_list_store_new (NUM_COLS, G_TYPE_STRING, G_TYPE_UINT);
+    store = gtk_list_store_new (NUM_COLS,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
 
-    /* Append a row and fill in some data */
-    gtk_list_store_append (store, &iter);
-    gtk_list_store_set (store, &iter,
-                        COL_NAME, "Heinz El-Mann",
-                        COL_AGE, 51,
+
+
+    struct ifaddrs *ifaddr, *ifa;
+    int family, s;
+    char host[NI_MAXHOST];
+
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Walk through linked list, maintaining head pointer so we
+        can free list later */
+    
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL)
+            continue;
+
+        family = ifa->ifa_addr->sa_family;
+        if (family == AF_PACKET && ifa->ifa_data != NULL) {
+            struct rtnl_link_stats *stats = ifa->ifa_data;
+            gtk_list_store_append (store, &iter);
+            gtk_list_store_set (store, &iter,
+                        COL_INDEX, i,
+                        COL_TYPE, ifa->ifa_name,
+                        COL_TX_PACKETS, stats->tx_packets,
+                        COL_RX_PACKETS, stats->rx_packets,
+                        COL_TX_BYTES, stats->tx_bytes,
+                        COL_RX_BYTES, stats->rx_bytes,
                         -1);
-
-    /* append another row and fill in some data */
-    gtk_list_store_append (store, &iter);
-    gtk_list_store_set (store, &iter,
-                        COL_NAME, "Jane Doe",
-                        COL_AGE, 23,
-                        -1);
-
-    /* ... and a third row */
-    gtk_list_store_append (store, &iter);
-    gtk_list_store_set (store, &iter,
-                        COL_NAME, "Joe Bungop",
-                        COL_AGE, 91,
-                        -1);
+            
+        }
+        i++;
+    }
+            
 
     return GTK_TREE_MODEL (store);
 };
@@ -79,24 +96,52 @@ static GtkWidget * create_view_and_model (void){
 
     view = gtk_tree_view_new ();
 
-    /* --- Column #1 --- */
-
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "Name",  
+                                                "N°",  
                                                 renderer,
-                                                "text", COL_NAME,
+                                                "text", COL_INDEX,
                                                 NULL);
 
-    /* --- Column #2 --- */
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Type",  
+                                                renderer,
+                                                "text", COL_TYPE,
+                                                NULL);
 
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "Age",  
+                                                "TX Packets",  
                                                 renderer,
-                                                "text", COL_AGE,
+                                                "text", COL_TX_PACKETS,
+                                                NULL);
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "RX Packets",  
+                                                renderer,
+                                                "text", COL_TX_PACKETS,
+                                                NULL);
+    
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "TX Bytes",  
+                                                renderer,
+                                                "text", COL_TX_BYTES,
+                                                NULL);
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "RX Bytes",  
+                                                renderer,
+                                                "text", COL_RX_BYTES,
                                                 NULL);
 
     model = create_and_fill_model ();
