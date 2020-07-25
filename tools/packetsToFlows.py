@@ -32,7 +32,7 @@ if len(sys.argv) > 3:
 def main():
     packs = extract_packets(file_path)
     if (labeling):
-        flows = flow_labeling(packs)
+        flows = extract_flows(packs, 39)
         csvheader.append('Label')
         label = sys.argv[3]
         write_output(output_file, flows, csvheader, label)

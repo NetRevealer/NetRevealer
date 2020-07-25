@@ -32,7 +32,7 @@
 #include <sys/time.h>
 
 #include <stdbool.h>
-#include <python3.7m/Python.h>
+#include <python3.8/Python.h>
 
 /* tcpdump header (ether.h) defines ETHER_HDRLEN) */
 #ifndef ETHER_HDRLEN 
@@ -46,7 +46,7 @@ char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*pack
 char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet,bool direction);
 
 FILE *output_file;
-PyObject* Function;
+PyObject* extractFeatures_fromFlow;
 PyObject* pargs;
 
 char host[256];
@@ -56,17 +56,29 @@ int hostname;
 struct flow{
     char pkts[10800];
     int len ;
+    int backward_count;
+    int forward_count;
     struct flow* next;
 };
 char actualport[12];
 char actualaddr[19];
+char actualdirection[3];
 struct flow* head = NULL;
 
 /* Given a reference (pointer to pointer) to the head of a list 
    and an int, inserts a new node on the front of the list. */
 void push(struct flow** head_ref, char new_data[216]){ 
+    // printf("%s\n","test1");
     struct flow* new_flow = (struct flow*) malloc(sizeof(struct flow));
     sprintf(new_flow->pkts, new_data);
+    int cmp = strcmp(actualdirection, "B,");
+    if (cmp == 0){
+        new_flow->backward_count = 1;
+        new_flow->forward_count = 0;
+    } else {
+        new_flow->forward_count = 1;
+        new_flow->backward_count = 0;
+    }
     new_flow->len = 1;
     new_flow->next = (*head_ref); 
     (*head_ref)    = new_flow;
@@ -104,14 +116,23 @@ void deleteFlow(struct flow **head_ref, int len){
 
 void update_pkts(struct flow *f, char data[216]){
     sprintf(f->pkts + strlen(f->pkts), data);
+    int cmp = strcmp(actualdirection, "B,");
+    if (cmp == 0){
+        f->backward_count++;
+    } else {
+        f->forward_count++;
+    }
     f->len++;
     if (f->len == 40){
-        // printf("%s\n","================||40 packets of flow||================");
+        // printf("%s %d %d\n","================||40 packets of flow||================", f->backward_count, f->forward_count);
         // printf("%s", f->pkts);
-        pargs = Py_BuildValue("(s)", f->pkts);
-        PyObject_CallObject(Function, pargs);
+        if (f->backward_count > 1 && f->forward_count > 1){
+            // printf("wow");
+            pargs = Py_BuildValue("(s)", f->pkts);
+            PyObject_CallObject(extractFeatures_fromFlow, pargs);
+        }
         deleteFlow(&head, 40);
-        
+
     }
 }
 
@@ -151,6 +172,7 @@ void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
         /* handle IP packet */
         sprintf(actualport, NULL);
         sprintf(actualaddr, NULL);
+        sprintf(actualdirection, NULL);
         sprintf(pkt, handle_IP(args,pkthdr,packet));
         searchflow(&head, pkt, actualaddr, actualport);
         fprintf(output_file,"\n");
@@ -257,8 +279,10 @@ char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pack
 
     if(cmp == 0){
         is_forward = true;
+        sprintf(actualdirection, "F,");
     } else{
         is_forward = false;
+        sprintf(actualdirection, "B,");
     }
 
     /* Check to see if we have the first fragment */
@@ -389,8 +413,9 @@ int main(int argc,char **argv){
     bpf_u_int32 netp;           /* ip                        */
     u_char* args = NULL;
 
-    Py_Initialize();
 
+    Py_Initialize();
+    
     /* This is to add the path in the code */
     PyObject *sys = PyImport_ImportModule("sys");
     PyObject *path = PyObject_GetAttrString(sys, "path");
@@ -410,8 +435,8 @@ int main(int argc,char **argv){
     }
 
     /* 2nd: Getting reference to the function */
-    Function = PyObject_GetAttrString(Module, (char*)"extractFeatures_fromFlow");
-    if (!Function) {
+    extractFeatures_fromFlow = PyObject_GetAttrString(Module, (char*)"extractFeatures_fromFlow");
+    if (!extractFeatures_fromFlow) {
         PyErr_Print();
         printf("Pass valid argument to link_list()\n");
     }
@@ -423,7 +448,7 @@ int main(int argc,char **argv){
     host_entry = gethostbyname(host); //find host information
     strcpy(hostIP,inet_ntoa(*((struct in_addr*) host_entry->h_addr_list[0]))); //Convert into IP string
     
-    
+
 
     /* Options must be passed in as a string */
     if(argc < 2){ 
