@@ -65,13 +65,27 @@
               </packing>
             </child>
             <child>
+              <object class="GtkToolButton" id="gtkToolBarDefault">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Default</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">document-open-recent</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkToolButton" id="gtkToolBarQuit">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Quit</property>
                 <property name="use_underline">True</property>
-                <property name="icon_name">application-exit</property>
+                <property name="icon_name">document-revert</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -108,7 +122,7 @@
           <object class="GtkImage">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="xpad">47</property>
+            <property name="xpad">5</property>
             <property name="ypad">9</property>
             <property name="pixbuf">logo.png</property>
           </object>
