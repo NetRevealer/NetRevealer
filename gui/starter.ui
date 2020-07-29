@@ -6,7 +6,7 @@
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Interface selection</property>
-    <property name="resizable">False</property>
+    <property name="window_position">center</property>
     <property name="default_width">800</property>
     <property name="default_height">600</property>
     <child>
@@ -37,13 +37,55 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton">
+              <object class="GtkToolButton" id="gtkToolBarBackup">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Backup</property>
                 <property name="use_underline">True</property>
                 <property name="icon_name">document-save</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="gtkToolBarRestore">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Restore</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">edit-redo</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="gtkToolBarDefault">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Default</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">document-open-recent</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="gtkToolBarQuit">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Quit</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">document-revert</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -77,14 +119,12 @@
           </packing>
         </child>
         <child>
-          <object class="GtkLabel" id="gtkLabelLogo">
+          <object class="GtkImage">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">50</property>
-            <property name="margin_right">50</property>
-            <property name="margin_top">50</property>
-            <property name="margin_bottom">50</property>
-            <property name="label" translatable="yes">Logo here</property>
+            <property name="xpad">5</property>
+            <property name="ypad">9</property>
+            <property name="pixbuf">logo.png</property>
           </object>
           <packing>
             <property name="left_attach">0</property>
@@ -92,16 +132,34 @@
           </packing>
         </child>
         <child>
-          <object class="GtkLabel" id="gtkLabelLogo1">
+          <object class="GtkTreeView">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <child internal-child="selection">
+              <object class="GtkTreeSelection"/>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">3</property>
+            <property name="width">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_top">50</property>
-            <property name="margin_bottom">50</property>
-            <property name="label" translatable="yes">Logo here</property>
+            <property name="xpad">10</property>
+            <property name="ypad">10</property>
+            <property name="label" translatable="yes">Reveal traffic Flows in your computer, and allow them or block (based on machine learning methods)
+
+
+Please select a network interface, before that create a buckup.</property>
           </object>
           <packing>
             <property name="left_attach">0</property>
             <property name="top_attach">2</property>
+            <property name="width">2</property>
           </packing>
         </child>
       </object>
