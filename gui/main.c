@@ -95,7 +95,7 @@ static GtkWidget * create_view_from_model (GtkTreeModel *model){
 };
 
 
-int main (int   argc, char *argv[]){
+int start (int   argc, char *argv[]){
     gchar *text;
     gint i;
     GtkTreeIter    iter;

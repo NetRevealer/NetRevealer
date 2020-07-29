@@ -7,6 +7,8 @@
     <property name="can_focus">False</property>
     <property name="hexpand">True</property>
     <property name="vexpand">True</property>
+    <property name="width_request">1366</property>
+    <property name="height_request">768</property>
     <child>
       <object class="GtkGrid" id="gtkGrid">
         <property name="visible">True</property>

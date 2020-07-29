@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <linux/if_link.h>
+#include "main.c"
 
 #define _GNU_SOURCE     /* To get defns of NI_MAXSERV and NI_MAXHOST */
 
@@ -26,32 +27,29 @@
 //   return row;
 // }
 
-enum {
+enum interface_cols{
     COL_INDEX,
     COL_TYPE,
     COL_TX_PACKETS,
     COL_RX_PACKETS,
     COL_TX_BYTES,
     COL_RX_BYTES,
-    NUM_COLS
+    NUM_COLS_INTERFACES,
 };
 
+int argc;
+char *argv[];
 gchar *selected_type;
 gboolean network_rules_backup = 1;
 GObject *gtkWindow;
-
-// enum{
-//   COL_NAME = 0,
-//   COL_AGE,
-//   NUM_COLS
-// };
+GtkTreeSelection *selection;
 
 static GtkTreeModel * create_and_fill_model (void){
     GtkListStore  *store;
     GtkTreeIter    iter;
     int i = 0;
 
-    store = gtk_list_store_new (NUM_COLS,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
+    store = gtk_list_store_new (NUM_COLS_INTERFACES,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
 
 
 
@@ -193,16 +191,19 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
 
 
     
-    gtkmainWindow = gtk_builder_new ();
-    if (gtk_builder_add_from_file (gtkmainWindow, "mainWindow.ui", &error) == 0){
-        g_printerr ("Error loading file: %s\n", error->message);
-        g_clear_error (&error);
-        return 1;
-    }
-    mainWindow = gtk_builder_get_object (gtkmainWindow, "mainWindow");
-    g_signal_connect (mainWindow,"destroy", G_CALLBACK (gtk_main_quit), NULL);
+    // gtkmainWindow = gtk_builder_new ();
+    // if (gtk_builder_add_from_file (gtkmainWindow, "main.ui", &error) == 0){
+    //     g_printerr ("Error loading file: %s\n", error->message);
+    //     g_clear_error (&error);
+    //     return 1;
+    // }
+    // mainWindow = gtk_builder_get_object (gtkmainWindow, "mainWindow");
     gtk_window_close(window);
     gtk_window_close(gtkWindow);
+    start(argc, argv);
+    gtk_main_quit();
+    
+    
     
 
 
@@ -211,7 +212,22 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
 void gtkWarningCancel_clicked(GtkWidget *widget, gpointer data, GtkWindow *window) {
     
     gtk_window_close(window);
+    GtkListStore  *store;
+    GtkTreeIter    iter;
     
+
+    // store = gtk_list_store_new (NUM_COLS_INTERFACES,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
+    // gtk_list_store_append (store, &iter);
+    // gtk_list_store_set (store, &iter,
+    //             COL_INDEX, 19,
+    //             COL_TYPE, "ifa_name",
+    //             COL_TX_PACKETS, 454,
+    //             COL_RX_PACKETS, 546,
+    //             COL_TX_BYTES, 58465,
+    //             COL_RX_BYTES, 546,
+    //             -1);
+            
+     
 
 }
 void gtkErrorOk_clicked(GtkWidget *widget, gpointer data, GtkWidget *window) {
@@ -373,14 +389,15 @@ int main (int   argc, char *argv[]){
     GObject *gtkListBox;
     GObject *gtkLabelLogo;
     GObject *gtkGrid;
-
     GError *error = NULL;
-    GtkTreeSelection *selection;
     GtkTreeModel *model;
     GtkTreeIter iter;
     GtkWidget *view;
-    gtk_init (&argc, &argv);
 
+
+    gtk_init (&argc, &argv);
+    argc = argc;
+    argv = argv;
     /* Construct a GtkBuilder instance and load our UI description */
     builder = gtk_builder_new ();
     if (gtk_builder_add_from_file (builder, "starter.ui", &error) == 0){
