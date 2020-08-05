@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <linux/if_link.h>
+#include <pthread.h>
+#include "../livefeaturecollector/LiveFeatureCollector.c"
 
 #define _GNU_SOURCE     /* To get defns of NI_MAXSERV and NI_MAXHOST */
 
@@ -32,6 +34,10 @@ enum{
   COL_NPACK,
   NUM_COLS
 };
+
+GtkWidget *view_Capture;
+GtkTreeModel *model_Capture;
+GtkListStore  *store_Capture;
 
 static GtkTreeModel * fill_model (gchar *flowid, gchar *app, gint *npack, GtkTreeIter iter, GtkListStore *store){
 
@@ -94,12 +100,17 @@ static GtkWidget * create_view_from_model (GtkTreeModel *model){
     return view;
 };
 
+void gtkToolBarStart_clicked(GtkWidget *widget, gpointer data) {
+    pthread_t ptid; 
+    pthread_create(&ptid, NULL, &scan, NULL);
+    
+}
+
 
 int start (int   argc, char *argv[]){
     gchar *text;
     gint i;
-    GtkTreeIter    iter;
-    GtkListStore  *store;
+    GtkTreeIter iter;
 
     GtkWidget *row;
     GtkBuilder *builder;
@@ -109,9 +120,8 @@ int start (int   argc, char *argv[]){
     GObject *gtkListBox;
     GObject *gtkLabelLogo;
     GObject *gtkScrolledWindow;
+    GObject *gtkToolBarStart;
     GError *error = NULL;
-    GtkWidget *view;
-    GtkTreeModel *model;
     gtk_init (&argc, &argv);
 
     /* Construct a GtkBuilder instance and load our UI description */
@@ -124,44 +134,18 @@ int start (int   argc, char *argv[]){
 
     /* Connect signal handlers to the constructed widgets. */
     gtkWindow = gtk_builder_get_object (builder, "main");
+    gtkToolBarStart = gtk_builder_get_object(builder, "gtkToolBarStart");
     
 
-    store = gtk_list_store_new (NUM_COLS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
+    store_Capture = gtk_list_store_new (NUM_COLS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
     
-    for(i = 0; i < 400; i++)
-    {
-        if (i % 10 == 0)
-        {
+    
 
-            model = fill_model ("flowid","Youtube",i,iter,store);
-
-            view = create_view_from_model (model);
-
-            gtkScrolledWindow =  gtk_builder_get_object(builder, "gtkScrolledWindow");
-
-            gtk_container_add (GTK_CONTAINER (gtkScrolledWindow), view);
-
-            gtk_widget_show(gtkScrolledWindow);
-        }
-    //gtk_grid_attach ((GtkGrid *)gtkGrid, view, 0, 1, 1, 1);
-    // gtk_list_box_set_selection_mode ( gtkListBox, GTK_SELECTION_NONE);
-    // for (i = 0; i < 20; i++)
-    // {
-    //   text = g_strdup_printf ("Row %d", i);
-    //   // row = create_row(text);
-    //   printf("%s hhhhh \n", text);
-    //   gtk_list_box_insert (gtkListBox, gtkLabelLogo, -1);
-    // }
-    // GtkToolbar = gtk_builder_get_object(builder, "toolBar");
-    // GtkToolButton = gtk_builder_get_object(builder, "toolButtonAllow");
-    // g_signal_connect (GtkToolButton, "clicked", G_CALLBACK (print_hello), NULL);
-
-    /*if (gtk_widget_get_no_show_all(gtkWindow)){
-        gtk_widget_hide (gtkWindow);
-    }*/
-    }
-    gtk_widget_show_all(gtkWindow);
+    g_signal_connect (gtkToolBarStart, "clicked", gtkToolBarStart_clicked, NULL);
     g_signal_connect (gtkWindow, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+    gtk_widget_show_all(gtkWindow);
+
+    
     gtk_main ();
 
     return 0;

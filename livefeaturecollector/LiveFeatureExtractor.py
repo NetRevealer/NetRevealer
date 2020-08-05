@@ -307,7 +307,7 @@ def extractFeatures_fromFlow(flow):
     pred = loaded_model.predict(flow)
     # print(pred)
     print('========|{}|========'.format(Apps[pred[0]]))
-
+    # return Apps[pred[0]]
 
 class Network(nn.Module):
     def __init__(self):
@@ -353,7 +353,7 @@ if __name__ == 'LiveFeatureExtractor':
     # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)])
     # print('[1] model and transform has been created !\n\n')
     # print('[*] OUT: LiveFeatureExtractor')
-        loaded_model = pickle.load(open('models/NetDump_RandomForest.sav', 'rb'))
+        loaded_model = pickle.load(open('../models/NetDump_RandomForest.sav', 'rb'))
         print('[*] model has been created')
     # scaler = preprocessing.StandardScaler()
     # scaler.scale_ = scaler_scale
@@ -395,7 +395,7 @@ if __name__== '__main__':
 
     # print('==========================|{}|======================\n\n'.format(Apps[pred]))
     # print('[*] OUT: __main__')
-    loaded_model = pickle.load(open('models/NetDump_OneVsOne.sav', 'rb'))
+    loaded_model = pickle.load(open('../models/NetDump_OneVsOne.sav', 'rb'))
     # scaler = preprocessing.StandardScaler()
     # scaler.scale_ = scaler_scale
     # scaler.mean_ = scaler_mean

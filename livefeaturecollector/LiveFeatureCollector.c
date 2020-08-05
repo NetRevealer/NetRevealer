@@ -30,6 +30,7 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 #include <stdbool.h>
 #include <python3.8/Python.h>
@@ -48,6 +49,7 @@ char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*pack
 FILE *output_file;
 PyObject* extractFeatures_fromFlow;
 PyObject* pargs;
+PyObject *result;
 
 char host[256];
 struct hostent *host_entry;
@@ -132,7 +134,7 @@ void update_pkts(struct flow *f, char data[216]){
             PyObject_CallObject(extractFeatures_fromFlow, pargs);
         }
         deleteFlow(&head, 40);
-
+        
     }
 }
 
@@ -404,7 +406,8 @@ char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pac
 
 
 
-int main(int argc,char **argv){
+int scan(){
+    // int argc = 3;
     char dev[] = "wlp6s0";		/* Device to sniff on */
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t* liveCapture;
@@ -412,14 +415,15 @@ int main(int argc,char **argv){
     bpf_u_int32 maskp;          /* subnet mask               */
     bpf_u_int32 netp;           /* ip                        */
     u_char* args = NULL;
-
+    
+    pthread_detach(pthread_self());
 
     Py_Initialize();
     
     /* This is to add the path in the code */
     PyObject *sys = PyImport_ImportModule("sys");
     PyObject *path = PyObject_GetAttrString(sys, "path");
-    PyList_Append(path, PyUnicode_FromString("./livefeaturecollector/"));
+    PyList_Append(path, PyUnicode_FromString("../livefeaturecollector/"));
     
     /* 1st: Import the module */
     PyObject* ModuleString = PyUnicode_FromString((char*) "LiveFeatureExtractor");
@@ -451,10 +455,10 @@ int main(int argc,char **argv){
 
 
     /* Options must be passed in as a string */
-    if(argc < 2){ 
-        fprintf(stdout,"Usage: %s numpackets \"options\"\n",argv[0]);
-        return 0;
-    }
+    // if(argc < 2){ 
+    //     fprintf(stdout,"Usage: %s numpackets \"options\"\n",argv[0]);
+    //     return 0;
+    // }
 
     signal(SIGINT, sigintHandler);
     output_file = fopen("out.csv","w");
@@ -472,29 +476,29 @@ int main(int argc,char **argv){
     }
 
 
-    if(argc > 2){
-        /* Lets try and compile the program.. non-optimized */
-        if(pcap_compile(liveCapture,&fp,argv[2],0,netp) == -1){
-            fprintf(stderr, "%s\n", pcap_geterr(liveCapture));
-            exit(1);
-        }
+    
+    /* Lets try and compile the program.. non-optimized */
+    if(pcap_compile(liveCapture,&fp,"tcp || udp",0,netp) == -1){
+        fprintf(stderr, "%s\n", pcap_geterr(liveCapture));
+        exit(1);
+    }
 
-        /* set the compiled program as the filter */
-        if(pcap_setfilter(liveCapture,&fp) == -1){
-            fprintf(stderr,"Error setting filter\n");
-            exit(1);
-        }
+    /* set the compiled program as the filter */
+    if(pcap_setfilter(liveCapture,&fp) == -1){
+        fprintf(stderr,"Error setting filter\n");
+        exit(1);
     }
 
     /* ... and loop */ 
     
     // struct flow* start = (struct flow*)malloc(sizeof(struct flow));
     // sprintf(start->pkts + strlen(start->pkts), "start");
-    pcap_loop(liveCapture,atoi(argv[1]),Jacket,args);
+    pcap_loop(liveCapture,1000,Jacket,args);
 
     // fprintf(stdout,"\nfinished\n");
     fflush(output_file);
     fclose(output_file);
     // printf("--------------------------------------------------------------------\n");
+    pthread_exit(NULL);
     return 0;
 }
