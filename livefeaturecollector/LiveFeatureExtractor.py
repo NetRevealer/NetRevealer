@@ -293,8 +293,10 @@ def extractFeatures_fromFlow(flow):
         flows = extract_flows(packets)
     except Exception as e:
         print(e)
-    flow = flows[0].get_features_flattened()
-    flow = np.delete(flow, ignored_cols).astype(float).reshape(1, -1)
+    flow_tem = flows[0].get_features_flattened()
+    
+    
+    flow = np.delete(flow_tem, ignored_cols).astype(float).reshape(1, -1)
     # flow = transform(flow.reshape(1,1,80))
     
     # output = model(flow.float().reshape(1,80))
@@ -306,8 +308,17 @@ def extractFeatures_fromFlow(flow):
     
     pred = loaded_model.predict(flow)
     # print(pred)
-    print('========|{}|========'.format(Apps[pred[0]]))
-
+    # print('========|{}|========'.format(Apps[pred[0]]))
+    label = Apps[pred[0]]
+    flowDetail = flow_tem[0] + '|' + label + '|' + flow_tem[1]
+    for i in range(2, len(flow_tem)):
+        if i not in ignored_cols:
+            flowDetail = flowDetail + '|' + flow_tem[i]
+    # print(flowDetail)
+    # print(len(flowDetail.split('|')))
+    # print(flowDetail)
+    # print(len(flowDetail.split('|')))
+    return flowDetail
 
 class Network(nn.Module):
     def __init__(self):
@@ -353,7 +364,7 @@ if __name__ == 'LiveFeatureExtractor':
     # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)])
     # print('[1] model and transform has been created !\n\n')
     # print('[*] OUT: LiveFeatureExtractor')
-        loaded_model = pickle.load(open('models/NetDump_RandomForest.sav', 'rb'))
+        loaded_model = pickle.load(open('../models/NetDump_RandomForest.sav', 'rb'))
         print('[*] model has been created')
     # scaler = preprocessing.StandardScaler()
     # scaler.scale_ = scaler_scale
@@ -395,7 +406,7 @@ if __name__== '__main__':
 
     # print('==========================|{}|======================\n\n'.format(Apps[pred]))
     # print('[*] OUT: __main__')
-    loaded_model = pickle.load(open('models/NetDump_OneVsOne.sav', 'rb'))
+    loaded_model = pickle.load(open('../models/NetDump_OneVsOne.sav', 'rb'))
     # scaler = preprocessing.StandardScaler()
     # scaler.scale_ = scaler_scale
     # scaler.mean_ = scaler_mean

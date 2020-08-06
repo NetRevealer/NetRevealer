@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <linux/if_link.h>
+#include "main.c"
 
 #define _GNU_SOURCE     /* To get defns of NI_MAXSERV and NI_MAXHOST */
 
@@ -26,33 +27,32 @@
 //   return row;
 // }
 
-enum {
+enum interface_cols{
     COL_INDEX,
     COL_TYPE,
     COL_TX_PACKETS,
     COL_RX_PACKETS,
     COL_TX_BYTES,
     COL_RX_BYTES,
-    NUM_COLS
+    NUM_COLS_INTERFACES,
 };
 
+int argc;
+char *argv[];
 gchar *selected_type;
 gboolean network_rules_backup = 1;
 GObject *gtkWindow;
-
-// enum{
-//   COL_NAME = 0,
-//   COL_AGE,
-//   NUM_COLS
-// };
+GtkTreeSelection *selection;
+GtkListStore  *store;
+GtkTreeModel *model;
+GtkTreeIter iter;
+GtkWidget *view;
 
 static GtkTreeModel * create_and_fill_model (void){
-    GtkListStore  *store;
-    GtkTreeIter    iter;
     int i = 0;
 
-    store = gtk_list_store_new (NUM_COLS,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
-
+    
+    store = gtk_list_store_new (NUM_COLS_INTERFACES,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
 
 
     struct ifaddrs *ifaddr, *ifa;
@@ -193,29 +193,48 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
 
 
     
-    gtkmainWindow = gtk_builder_new ();
-    if (gtk_builder_add_from_file (gtkmainWindow, "mainWindow.ui", &error) == 0){
-        g_printerr ("Error loading file: %s\n", error->message);
-        g_clear_error (&error);
-        return 1;
-    }
-    mainWindow = gtk_builder_get_object (gtkmainWindow, "mainWindow");
-    g_signal_connect (mainWindow,"destroy", G_CALLBACK (gtk_main_quit), NULL);
+    // gtkmainWindow = gtk_builder_new ();
+    // if (gtk_builder_add_from_file (gtkmainWindow, "main.ui", &error) == 0){
+    //     g_printerr ("Error loading file: %s\n", error->message);
+    //     g_clear_error (&error);
+    //     return 1;
+    // }
+    // mainWindow = gtk_builder_get_object (gtkmainWindow, "mainWindow");
     gtk_window_close(window);
     gtk_window_close(gtkWindow);
+    start(argc, argv);
+    gtk_main_quit();
+    
+    
     
 
 
 }
 
 void gtkWarningCancel_clicked(GtkWidget *widget, gpointer data, GtkWindow *window) {
-    
+    gtk_widget_set_sensitive(gtkWindow, TRUE);
     gtk_window_close(window);
+    // GtkListStore  *store;
+    // GtkTreeIter    iter;
     
+
+    // store = gtk_list_store_new (NUM_COLS_INTERFACES,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
+    // gtk_list_store_append (store, &iter);
+    // gtk_list_store_set (store, &iter,
+    //             COL_INDEX, 19,
+    //             COL_TYPE, "ifa_name",
+    //             COL_TX_PACKETS, 454,
+    //             COL_RX_PACKETS, 546,
+    //             COL_TX_BYTES, 58465,
+    //             COL_RX_BYTES, 546,
+    //             -1);
+            
+     
 
 }
 void gtkErrorOk_clicked(GtkWidget *widget, gpointer data, GtkWidget *window) {
     gtk_window_close (window);
+    gtk_widget_set_sensitive(gtkWindow, TRUE);
 }
 
 void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
@@ -227,6 +246,8 @@ void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
     GtkWidget *gtkErrorInterface;
     GObject *gtkWarningCancel;
     GError *error = NULL;
+    
+    gtk_widget_set_sensitive(gtkWindow, FALSE);
     if (selected_type == NULL){
         errorBuilder = gtk_builder_new ();
         if (gtk_builder_add_from_file (errorBuilder, "error_interface.ui", &error) == 0){
@@ -349,7 +370,23 @@ void gtkToolBarRestore_clicked(GtkWidget *widget, gpointer data, GtkWindow *wind
     gtk_widget_destroy (dialog);
 }
 
+void gtkListStoreUpdate_clicked(GtkWidget *widget, gpointer data){
 
+}
+
+void gtkToolBarQuit_clicked(GtkWidget *widget, gpointer data){
+    for(int i = 0; i<5; i++){
+    gtk_list_store_append (store, &iter);
+            gtk_list_store_set (store, &iter,
+                        COL_INDEX, 9,
+                        COL_TYPE, "ifa->ifa_name",
+                        COL_TX_PACKETS, 64684,
+                        COL_RX_PACKETS, 8646854,
+                        COL_TX_BYTES, 6846,
+                        COL_RX_BYTES, 68465,
+                        -1);
+    }
+}
 int fileexists(const char * filename){
     /* try to open file to read */
     FILE *file;
@@ -370,17 +407,17 @@ int main (int   argc, char *argv[]){
     GObject *gtkToolBarSelect;
     GObject *gtkToolBarBackup;
     GObject *gtkToolBarRestore;
+    GObject *gtkToolBarQuit;
     GObject *gtkListBox;
     GObject *gtkLabelLogo;
     GObject *gtkGrid;
-
     GError *error = NULL;
-    GtkTreeSelection *selection;
-    GtkTreeModel *model;
-    GtkTreeIter iter;
-    GtkWidget *view;
-    gtk_init (&argc, &argv);
+   
 
+
+    gtk_init (&argc, &argv);
+    argc = argc;
+    argv = argv;
     /* Construct a GtkBuilder instance and load our UI description */
     builder = gtk_builder_new ();
     if (gtk_builder_add_from_file (builder, "starter.ui", &error) == 0){
@@ -395,6 +432,7 @@ int main (int   argc, char *argv[]){
     gtkToolBarSelect = gtk_builder_get_object(builder, "gtkToolBarSelect");
     gtkToolBarBackup = gtk_builder_get_object(builder, "gtkToolBarBackup");
     gtkToolBarRestore = gtk_builder_get_object(builder, "gtkToolBarRestore");
+    gtkToolBarQuit = gtk_builder_get_object(builder, "gtkToolBarQuit");
     view = create_view_and_model ();
     // gtk_container_add (GTK_CONTAINER (gtkGrid), view);
     gtk_grid_attach ((GtkGrid *)gtkGrid, view, 0, 3, 2, 1);
@@ -407,13 +445,17 @@ int main (int   argc, char *argv[]){
     g_signal_connect (gtkToolBarSelect, "clicked", gtkToolBarSelect_clicked, NULL);
     g_signal_connect (gtkToolBarBackup, "clicked", gtkToolBarBackup_clicked, gtkWindow);
     g_signal_connect (gtkToolBarRestore, "clicked", gtkToolBarRestore_clicked, gtkWindow);
-    
+    // g_signal_connect (gtkToolBarQuit, "clicked", gtkToolBarQuit_clicked, NULL);
+    // g_signal_connect (store, "row-inserted", gtkListStoreUpdate_clicked, NULL);
     gtk_widget_show_all (gtkWindow);
-
+    
 
     
 
     gtk_main ();
+            
+        
+    // printf("\n\n\n\n\n\n\n\nHellow\n\n");
     
     return 0;
 }
