@@ -131,7 +131,15 @@ void update_pkts(struct flow *f, char data[216]){
         if (f->backward_count > 1 && f->forward_count > 1){
             // printf("wow");
             pargs = Py_BuildValue("(s)", f->pkts);
-            PyObject_CallObject(extractFeatures_fromFlow, pargs);
+            PyObject *result = PyObject_CallObject(extractFeatures_fromFlow, pargs);
+            if (result == NULL){
+                printf("NULL\n");
+                
+            } else {
+                gtkStoreAppend(PyUnicode_AsUTF8(result));
+                
+            }
+
         }
         deleteFlow(&head, 40);
         
@@ -165,6 +173,10 @@ void sigintHandler(int sig_num)
     fclose(output_file);
     exit(0);
 } 
+
+void stop(){
+    exit(0);
+}
 
 /* looking at ethernet headers */
 void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
@@ -493,7 +505,7 @@ int scan(){
     
     // struct flow* start = (struct flow*)malloc(sizeof(struct flow));
     // sprintf(start->pkts + strlen(start->pkts), "start");
-    pcap_loop(liveCapture,1000,Jacket,args);
+    pcap_loop(liveCapture,-1,Jacket,args);
 
     // fprintf(stdout,"\nfinished\n");
     fflush(output_file);

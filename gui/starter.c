@@ -212,10 +212,10 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
 }
 
 void gtkWarningCancel_clicked(GtkWidget *widget, gpointer data, GtkWindow *window) {
-    
+    gtk_widget_set_sensitive(gtkWindow, TRUE);
     gtk_window_close(window);
-    GtkListStore  *store;
-    GtkTreeIter    iter;
+    // GtkListStore  *store;
+    // GtkTreeIter    iter;
     
 
     // store = gtk_list_store_new (NUM_COLS_INTERFACES,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
@@ -234,6 +234,7 @@ void gtkWarningCancel_clicked(GtkWidget *widget, gpointer data, GtkWindow *windo
 }
 void gtkErrorOk_clicked(GtkWidget *widget, gpointer data, GtkWidget *window) {
     gtk_window_close (window);
+    gtk_widget_set_sensitive(gtkWindow, TRUE);
 }
 
 void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
@@ -245,6 +246,8 @@ void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
     GtkWidget *gtkErrorInterface;
     GObject *gtkWarningCancel;
     GError *error = NULL;
+    
+    gtk_widget_set_sensitive(gtkWindow, FALSE);
     if (selected_type == NULL){
         errorBuilder = gtk_builder_new ();
         if (gtk_builder_add_from_file (errorBuilder, "error_interface.ui", &error) == 0){
@@ -372,6 +375,7 @@ void gtkListStoreUpdate_clicked(GtkWidget *widget, gpointer data){
 }
 
 void gtkToolBarQuit_clicked(GtkWidget *widget, gpointer data){
+    for(int i = 0; i<5; i++){
     gtk_list_store_append (store, &iter);
             gtk_list_store_set (store, &iter,
                         COL_INDEX, 9,
@@ -381,6 +385,7 @@ void gtkToolBarQuit_clicked(GtkWidget *widget, gpointer data){
                         COL_TX_BYTES, 6846,
                         COL_RX_BYTES, 68465,
                         -1);
+    }
 }
 int fileexists(const char * filename){
     /* try to open file to read */

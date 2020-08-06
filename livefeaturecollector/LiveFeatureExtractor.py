@@ -294,6 +294,10 @@ def extractFeatures_fromFlow(flow):
     except Exception as e:
         print(e)
     flow = flows[0].get_features_flattened()
+    flowDetail = flow[0]
+    # for i in range(1, len(flow)):
+        # flowDetail = flowDetail + '|' + flow[i]
+    
     flow = np.delete(flow, ignored_cols).astype(float).reshape(1, -1)
     # flow = transform(flow.reshape(1,1,80))
     
@@ -306,8 +310,10 @@ def extractFeatures_fromFlow(flow):
     
     pred = loaded_model.predict(flow)
     # print(pred)
-    print('========|{}|========'.format(Apps[pred[0]]))
-    # return Apps[pred[0]]
+    # print('========|{}|========'.format(Apps[pred[0]]))
+    label = Apps[pred[0]]
+    # print(flowDetail)
+    return flowDetail + '|' + label
 
 class Network(nn.Module):
     def __init__(self):
