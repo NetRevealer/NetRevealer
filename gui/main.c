@@ -33,6 +33,61 @@ enum{
     COL_FLOWID,
     COL_APP,
     COL_NPACK,
+    COL_TOTALLEN,
+    COL_MAXLEN,
+    COL_MINLEN,
+    COL_MEANLEN,
+    COL_MAXIAT,
+    COL_MINIAT,
+    COL_TOTALIAT,
+    COL_MEANIAT,
+    COL_DURATION,
+    COL_ACKCOUNT,
+    COL_PSHCOUNT,
+    COL_RSTCOUNT,
+    COL_SYNCOUNT,
+    COL_FINCOUNT,
+    COL_TOTALWIN,
+    COL_MAXWIN,
+    COL_MINWIN,
+    COL_MEANWIN,
+    COL_F_NPACK,
+    COL_F_TOTALLEN,
+    COL_F_MAXLEN,
+    COL_F_MINLEN,
+    COL_F_MEANLEN,
+    COL_F_MAXIAT,
+    COL_F_MINIAT,
+    COL_F_TOTALIAT,
+    COL_F_MEANIAT,
+    COL_F_DURATION,
+    COL_F_ACKCOUNT,
+    COL_F_PSHCOUNT,
+    COL_F_RSTCOUNT,
+    COL_F_SYNCOUNT,
+    COL_F_FINCOUNT,
+    COL_F_TOTALWIN,
+    COL_F_MAXWIN,
+    COL_F_MINWIN,
+    COL_F_MEANWIN,
+    COL_B_NPACK,
+    COL_B_TOTALLEN,
+    COL_B_MAXLEN,
+    COL_B_MINLEN,
+    COL_B_MEANLEN,
+    COL_B_MAXIAT,
+    COL_B_MINIAT,
+    COL_B_TOTALIAT,
+    COL_B_MEANIAT,
+    COL_B_DURATION,
+    COL_B_ACKCOUNT,
+    COL_B_PSHCOUNT,
+    COL_B_SYNCOUNT,
+    COL_B_FINCOUNT,
+    COL_B_TOTALWIN,
+    COL_B_MAXWIN,
+    COL_B_MINWIN,
+    COL_B_MEANWIN,
     NUM_COLS
 };
 
@@ -54,15 +109,128 @@ int col_index = 0;
 pthread_t ptid_scan; 
 
 void gtkStoreAppend(gchar *data){
-    char * token = strtok(data, "|");
+    
+    char *FLOWID = strtok(data, "|");
+    char *APP = strtok(NULL, "|");
+    int NPACK = atoi(strtok(NULL, "|"));
+    int TOTALLEN = atoi(strtok(NULL, "|"));
+    int MAXLEN = atoi(strtok(NULL, "|"));
+    int MINLEN = atoi(strtok(NULL, "|"));
+    double MEANLEN = atof(strtok(NULL, "|"));
+    double MAXIAT = atof(strtok(NULL, "|"));
+    double MINIAT = atof(strtok(NULL, "|"));
+    double TOTALIAT = atof(strtok(NULL, "|"));
+    double MEANIAT = atof(strtok(NULL, "|"));
+    double DURATION = atof(strtok(NULL, "|"));
+    int ACKCOUNT = atoi(strtok(NULL, "|"));
+    int PSHCOUNT = atoi(strtok(NULL, "|"));
+    int RSTCOUNT = atoi(strtok(NULL, "|"));
+    int SYNCOUNT = atoi(strtok(NULL, "|"));
+    int FINCOUNT = atoi(strtok(NULL, "|"));
+    int TOTALWIN = atoi(strtok(NULL, "|"));
+    int MAXWIN = atoi(strtok(NULL, "|"));
+    int MINWIN = atoi(strtok(NULL, "|"));
+    double MEANWIN = atof(strtok(NULL, "|"));
+    int F_NPACK = atoi(strtok(NULL, "|"));
+    int F_TOTALLEN = atoi(strtok(NULL, "|"));
+    int F_MAXLEN = atoi(strtok(NULL, "|"));
+    int F_MINLEN = atoi(strtok(NULL, "|"));
+    double F_MEANLEN = atof(strtok(NULL, "|"));
+    double F_MAXIAT = atof(strtok(NULL, "|"));
+    double F_MINIAT = atof(strtok(NULL, "|"));
+    double F_TOTALIAT = atof(strtok(NULL, "|"));
+    double F_MEANIAT = atof(strtok(NULL, "|"));
+    double F_DURATION = atof(strtok(NULL, "|"));
+    int F_ACKCOUNT = atoi(strtok(NULL, "|"));
+    int F_PSHCOUNT = atoi(strtok(NULL, "|"));
+    int F_RSTCOUNT = atoi(strtok(NULL, "|"));
+    int F_SYNCOUNT = atoi(strtok(NULL, "|"));
+    int F_FINCOUNT = atoi(strtok(NULL, "|"));
+    int F_TOTALWIN = atoi(strtok(NULL, "|"));
+    int F_MAXWIN = atoi(strtok(NULL, "|"));
+    int F_MINWIN = atoi(strtok(NULL, "|"));
+    double F_MEANWIN = atof(strtok(NULL, "|"));
+    int B_NPACK = atoi(strtok(NULL, "|"));
+    int B_TOTALLEN = atoi(strtok(NULL, "|"));
+    int B_MAXLEN = atoi(strtok(NULL, "|"));
+    int B_MINLEN = atoi(strtok(NULL, "|"));
+    double B_MEANLEN = atof(strtok(NULL, "|"));
+    double B_MAXIAT = atof(strtok(NULL, "|"));
+    double B_MINIAT = atof(strtok(NULL, "|"));
+    double B_TOTALIAT = atof(strtok(NULL, "|"));
+    double B_MEANIAT = atof(strtok(NULL, "|"));
+    double B_DURATION = atof(strtok(NULL, "|"));
+    int B_ACKCOUNT = atoi(strtok(NULL, "|"));
+    int B_PSHCOUNT = atoi(strtok(NULL, "|"));
+    int B_SYNCOUNT = atoi(strtok(NULL, "|"));
+    int B_FINCOUNT = atoi(strtok(NULL, "|"));
+    int B_TOTALWIN = atoi(strtok(NULL, "|"));
+    int B_MAXWIN = atoi(strtok(NULL, "|"));
+    int B_MINWIN = atoi(strtok(NULL, "|"));
+    double B_MEANWIN = atof(strtok(NULL, "|"));
     gtk_list_store_append (store_Capture , &iter_Capture);
     gtk_list_store_set (store_Capture, &iter_Capture,
             COL_INDEX_SCAN, col_index,
-            COL_FLOWID, token,
-            COL_APP, strtok(NULL, "|"),
-            COL_NPACK, 40,
+            COL_FLOWID, FLOWID,
+            COL_APP, APP,
+            COL_NPACK, NPACK,
+            COL_TOTALLEN, TOTALLEN,
+            COL_MAXLEN, MAXLEN,
+            COL_MINLEN, MINLEN,
+            COL_MEANLEN, MEANLEN,
+            COL_MAXIAT, MAXIAT,
+            COL_MINIAT, MINIAT,
+            COL_TOTALIAT, TOTALIAT,
+            COL_MEANIAT, MEANIAT,
+            COL_DURATION, DURATION,
+            COL_ACKCOUNT, ACKCOUNT,
+            COL_PSHCOUNT, PSHCOUNT,
+            COL_RSTCOUNT, RSTCOUNT,
+            COL_SYNCOUNT, SYNCOUNT,
+            COL_FINCOUNT, FINCOUNT,
+            COL_TOTALWIN, TOTALWIN,
+            COL_MAXWIN, MAXWIN,
+            COL_MINWIN, MINWIN,
+            COL_MEANWIN, MEANWIN,
+            COL_F_NPACK, F_NPACK,
+            COL_F_TOTALLEN, F_TOTALLEN,
+            COL_F_MAXLEN, F_MAXLEN,
+            COL_F_MINLEN, F_MINLEN,
+            COL_F_MEANLEN, F_MEANLEN,
+            COL_F_MAXIAT, F_MAXIAT,
+            COL_F_MINIAT, F_MINIAT,
+            COL_F_TOTALIAT, F_TOTALIAT,
+            COL_F_MEANIAT, F_MEANIAT,
+            COL_F_DURATION, F_DURATION,
+            COL_F_ACKCOUNT, F_ACKCOUNT,
+            COL_F_PSHCOUNT, F_PSHCOUNT,
+            COL_F_RSTCOUNT, F_RSTCOUNT,
+            COL_F_SYNCOUNT, F_SYNCOUNT,
+            COL_F_FINCOUNT, F_FINCOUNT,
+            COL_F_TOTALWIN, F_TOTALWIN,
+            COL_F_MAXWIN, F_MAXWIN,
+            COL_F_MINWIN, F_MINWIN,
+            COL_F_MEANWIN, F_MEANWIN,
+            COL_B_NPACK, B_NPACK,
+            COL_B_TOTALLEN, B_TOTALLEN,
+            COL_B_MAXLEN, B_MAXLEN,
+            COL_B_MINLEN, B_MINLEN,
+            COL_B_MEANLEN, B_MEANLEN,
+            COL_B_MAXIAT, B_MAXIAT,
+            COL_B_MINIAT, B_MINIAT,
+            COL_B_TOTALIAT, B_TOTALIAT,
+            COL_B_MEANIAT, B_MEANIAT,
+            COL_B_DURATION, B_DURATION,
+            COL_B_ACKCOUNT, B_ACKCOUNT,
+            COL_B_PSHCOUNT, B_PSHCOUNT,
+            COL_B_SYNCOUNT, B_SYNCOUNT,
+            COL_B_FINCOUNT, B_FINCOUNT,
+            COL_B_TOTALWIN, B_TOTALWIN,
+            COL_B_MAXWIN, B_MAXWIN,
+            COL_B_MINWIN, B_MINWIN,
+            COL_B_MEANWIN, B_MEANWIN,
             -1);
-
+    
     // adj = gtk_scrolled_window_get_vadjustment (gtkScrolledWindow);
     // gtk_adjustment_set_value(adj, gtk_adjustment_get_upper(adj));
     col_index++;
@@ -71,7 +239,66 @@ void gtkStoreAppend(gchar *data){
 
 static GtkTreeModel * create_and_fill_model_scan (void){
     
-    store_Capture = gtk_list_store_new (NUM_COLS, G_TYPE_INT, G_TYPE_STRING, G_TYPE_STRING , G_TYPE_INT);
+    store_Capture = gtk_list_store_new (NUM_COLS,
+                                    G_TYPE_INT,
+                                    G_TYPE_STRING,
+                                    G_TYPE_STRING,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_DOUBLE);
 
     // gtk_list_store_append (store_Capture , &iter_Capture);
     // gtk_list_store_set (store_Capture, &iter_Capture,
@@ -120,6 +347,392 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "N° Pkts",  
                                                 renderer,
                                                 "text", COL_NPACK,
+                                                NULL);
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Total len",  
+                                                renderer,
+                                                "text", COL_TOTALLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Max len",  
+                                                renderer,
+                                                "text", COL_MAXLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Min len",  
+                                                renderer,
+                                                "text", COL_MINLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Mean len",  
+                                                renderer,
+                                                "text", COL_MEANLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Max IAT",  
+                                                renderer,
+                                                "text", COL_MAXIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Mean IAT",  
+                                                renderer,
+                                                "text", COL_MINIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Total IAT",  
+                                                renderer,
+                                                "text", COL_TOTALIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Mean IAT",  
+                                                renderer,
+                                                "text", COL_MEANIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Duration",  
+                                                renderer,
+                                                "text", COL_DURATION,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Ack count",  
+                                                renderer,
+                                                "text", COL_ACKCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Psh count",  
+                                                renderer,
+                                                "text", COL_PSHCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Rst count",  
+                                                renderer,
+                                                "text", COL_RSTCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Syn count",  
+                                                renderer,
+                                                "text", COL_SYNCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Fin count",  
+                                                renderer,
+                                                "text", COL_FINCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Total win",  
+                                                renderer,
+                                                "text", COL_TOTALWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Max win",  
+                                                renderer,
+                                                "text", COL_MAXWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Min win",  
+                                                renderer,
+                                                "text", COL_MINWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Mean win",  
+                                                renderer,
+                                                "text", COL_MEANWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "N° F Pkts",  
+                                                renderer,
+                                                "text", COL_F_NPACK,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Total len",  
+                                                renderer,
+                                                "text", COL_F_TOTALLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Max len",  
+                                                renderer,
+                                                "text", COL_F_MAXLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Min len",  
+                                                renderer,
+                                                "text", COL_F_MINLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Mean len",  
+                                                renderer,
+                                                "text", COL_F_MEANLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Max IAT",  
+                                                renderer,
+                                                "text", COL_F_MAXIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Mean IAT",  
+                                                renderer,
+                                                "text", COL_F_MINIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Total IAT",  
+                                                renderer,
+                                                "text", COL_F_TOTALIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Mean IAT",  
+                                                renderer,
+                                                "text", COL_F_MEANIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Duration",  
+                                                renderer,
+                                                "text", COL_F_DURATION,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Ack count",  
+                                                renderer,
+                                                "text", COL_F_ACKCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Psh count",  
+                                                renderer,
+                                                "text", COL_F_PSHCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Rest count",  
+                                                renderer,
+                                                "text", COL_F_RSTCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Syn Count",  
+                                                renderer,
+                                                "text", COL_F_SYNCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Fin count",  
+                                                renderer,
+                                                "text", COL_F_FINCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Total win",  
+                                                renderer,
+                                                "text", COL_F_TOTALWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Max win",  
+                                                renderer,
+                                                "text", COL_F_MAXWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Min win",  
+                                                renderer,
+                                                "text", COL_F_MINWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F Mean win",  
+                                                renderer,
+                                                "text", COL_F_MEANWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "N° B Pkts",  
+                                                renderer,
+                                                "text", COL_B_NPACK,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Total len",  
+                                                renderer,
+                                                "text", COL_B_TOTALLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Max len",  
+                                                renderer,
+                                                "text", COL_B_MAXLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Min len",  
+                                                renderer,
+                                                "text", COL_B_MINLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Mean len",  
+                                                renderer,
+                                                "text", COL_B_MEANLEN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Max IAT",  
+                                                renderer,
+                                                "text", COL_B_MAXIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Mean IAT",  
+                                                renderer,
+                                                "text", COL_B_MINIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Total IAT",  
+                                                renderer,
+                                                "text", COL_B_TOTALIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Mean IAT",  
+                                                renderer,
+                                                "text", COL_B_MEANIAT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Duration",  
+                                                renderer,
+                                                "text", COL_B_DURATION,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Ack count",  
+                                                renderer,
+                                                "text", COL_B_ACKCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Psh count",  
+                                                renderer,
+                                                "text", COL_B_PSHCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Syn count",  
+                                                renderer,
+                                                "text", COL_B_SYNCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Fin count",  
+                                                renderer,
+                                                "text", COL_B_FINCOUNT,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Total win",  
+                                                renderer,
+                                                "text", COL_B_TOTALWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Max win",  
+                                                renderer,
+                                                "text", COL_B_MAXWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B min win",  
+                                                renderer,
+                                                "text", COL_B_MINWIN,
+                                                NULL);
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B Mean win",  
+                                                renderer,
+                                                "text", COL_B_MEANWIN,
                                                 NULL);
 
 

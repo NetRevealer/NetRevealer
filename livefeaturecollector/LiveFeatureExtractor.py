@@ -293,12 +293,10 @@ def extractFeatures_fromFlow(flow):
         flows = extract_flows(packets)
     except Exception as e:
         print(e)
-    flow = flows[0].get_features_flattened()
-    flowDetail = flow[0]
-    # for i in range(1, len(flow)):
-        # flowDetail = flowDetail + '|' + flow[i]
+    flow_tem = flows[0].get_features_flattened()
     
-    flow = np.delete(flow, ignored_cols).astype(float).reshape(1, -1)
+    
+    flow = np.delete(flow_tem, ignored_cols).astype(float).reshape(1, -1)
     # flow = transform(flow.reshape(1,1,80))
     
     # output = model(flow.float().reshape(1,80))
@@ -312,8 +310,15 @@ def extractFeatures_fromFlow(flow):
     # print(pred)
     # print('========|{}|========'.format(Apps[pred[0]]))
     label = Apps[pred[0]]
+    flowDetail = flow_tem[0] + '|' + label + '|' + flow_tem[1]
+    for i in range(2, len(flow_tem)):
+        if i not in ignored_cols:
+            flowDetail = flowDetail + '|' + flow_tem[i]
     # print(flowDetail)
-    return flowDetail + '|' + label
+    # print(len(flowDetail.split('|')))
+    # print(flowDetail)
+    # print(len(flowDetail.split('|')))
+    return flowDetail
 
 class Network(nn.Module):
     def __init__(self):
