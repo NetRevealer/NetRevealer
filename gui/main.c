@@ -27,6 +27,17 @@
 //   gtk_container_add_with_properties (GTK_CONTAINER (box), label, "expand", TRUE, NULL);
 //   return row;
 // }
+enum AppUsage_Cols {
+    COL_AU_INDEX_APP,
+    COL_AU_APP,
+    COL_AU_NPACK,
+    COL_AU_TOTALLEN,
+    COL_AU_F_NPACK,
+    COL_AU_F_TOTALLEN,
+    COL_AU_B_NPACK,
+    COL_AU_B_TOTALLEN,
+    NUM_AU_COLS
+};
 
 enum{
     COL_INDEX_SCAN,
@@ -98,6 +109,14 @@ GtkTreeModel *model_Capture;
 GtkListStore  *store_Capture;
 GtkTreeIter iter_Capture;
 
+GObject *gtkScrolledWindow2;
+
+GtkWidget *view_AppUsage;
+GtkTreeModel *model_AppUsage;
+GtkListStore  *store_AppUsage;
+GtkTreeIter iter_AppUsage;
+
+
 GtkAdjustment * adj;
 
 GObject *gtkToolBarStart;
@@ -105,6 +124,7 @@ GObject *gtkToolBarStop;
 GObject *gtkToolBarRestart;
 
 int col_index = 0;
+int app_index = 0;
 
 pthread_t ptid_scan; 
 
@@ -235,6 +255,99 @@ void gtkStoreAppend(gchar *data){
     // gtk_adjustment_set_value(adj, gtk_adjustment_get_upper(adj));
     col_index++;
     
+    //AppUsage
+    gboolean valid;
+    gboolean done;
+
+    gchar *app_name;
+    gint *pack;
+    gint *totlen;
+    gint *fpack;
+    gint *ftotlen;
+    gint *bpack;
+    gint *btotlen;
+
+    done = FALSE;
+    
+    valid = gtk_tree_model_get_iter_first (store_AppUsage,
+                                       &iter_AppUsage);
+    
+    while (valid)
+    {
+
+        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
+                            COL_AU_APP, &app_name,
+                            -1);
+
+
+    if(strcmp(app_name, APP) == 0){
+
+        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
+                      COL_AU_NPACK, &pack,
+                      -1);
+
+        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
+                      COL_AU_TOTALLEN, &totlen,
+                      -1);
+
+        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
+                      COL_AU_F_NPACK, &fpack,
+                      -1);
+
+        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
+                      COL_AU_F_TOTALLEN, &ftotlen,
+                      -1);
+
+        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
+                      COL_AU_B_NPACK, &bpack,
+                      -1);\
+
+        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
+                      COL_AU_B_TOTALLEN, &btotlen,
+                      -1);                                                                      
+
+        gtk_list_store_set(store_AppUsage,&iter_AppUsage,
+                            2,(NPACK + pack),
+                            3,(TOTALLEN + totlen),
+                            4,(F_NPACK + fpack),
+                            5,(F_TOTALLEN + ftotlen),
+                            6,(B_NPACK + bpack),
+                            7,(B_TOTALLEN + btotlen),
+                            -1);
+
+        done = TRUE;
+        break;                  
+      }
+
+    valid = gtk_tree_model_iter_next (store_AppUsage,
+                        &iter_AppUsage);
+    
+    }
+
+    if(!(done)){
+        gtk_list_store_append (store_AppUsage , &iter_AppUsage);
+        gtk_list_store_set (store_AppUsage, &iter_AppUsage,
+            COL_AU_INDEX_APP, app_index,
+            COL_AU_APP, APP,
+            COL_AU_NPACK, NPACK,
+            COL_AU_TOTALLEN, TOTALLEN,
+            COL_AU_F_NPACK, F_NPACK,
+            COL_AU_F_TOTALLEN, F_TOTALLEN,
+            COL_AU_B_NPACK, B_NPACK,
+            COL_AU_B_TOTALLEN, B_TOTALLEN,
+            -1);
+
+        app_index++;
+    }
+     /*   
+      g_free (app_name);
+      g_free (pack);
+      g_free (totlen);
+      g_free (fpack);
+      g_free (ftotlen);
+      g_free (bpack);
+      g_free (btotlen);
+      */
 }
 
 static GtkTreeModel * create_and_fill_model_scan (void){
@@ -749,6 +862,104 @@ static GtkWidget * create_view_and_model_scan (void){
     return view;
 };
 
+static GtkTreeModel * create_and_fill_model_app (void){
+    
+    store_AppUsage = gtk_list_store_new (NUM_AU_COLS,
+                                    G_TYPE_INT,
+                                    G_TYPE_STRING,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT,
+                                    G_TYPE_INT);
+
+    return GTK_TREE_MODEL (store_AppUsage);
+};
+
+static GtkWidget * create_view_and_model_app (void){
+    
+    GtkCellRenderer     *renderer;
+    GtkWidget           *view;
+
+    view = gtk_tree_view_new ();
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "N°",  
+                                                renderer,
+                                                "text", COL_AU_INDEX_APP,
+                                                NULL);
+    
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Application",  
+                                                renderer,
+                                                "text", COL_AU_APP,
+                                                NULL);
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Packs",  
+                                                renderer,
+                                                "text", COL_AU_NPACK,
+                                                NULL);
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "Totallen",  
+                                                renderer,
+                                                "text", COL_AU_TOTALLEN,
+                                                NULL);
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F_packs",  
+                                                renderer,
+                                                "text", COL_AU_F_NPACK,
+                                                NULL);
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "F_Totallen",  
+                                                renderer,
+                                                "text", COL_AU_F_TOTALLEN,
+                                                NULL);
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B_packs",  
+                                                renderer,
+                                                "text", COL_AU_B_NPACK,
+                                                NULL);
+
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
+                                                -1,      
+                                                "B_Totallen",  
+                                                renderer,
+                                                "text", COL_AU_B_TOTALLEN,
+                                                NULL);                                                                                                                                                                                
+
+    model_AppUsage = create_and_fill_model_app();
+
+    gtk_tree_view_set_model (GTK_TREE_VIEW (view), model_AppUsage);
+
+    /* The tree view has acquired its own reference to the
+    *  model, so we can drop ours. That way the model will
+    *  be freed automatically when the tree view is destroyed */
+
+    g_object_unref (model_AppUsage);
+
+    return view;
+};
 
 void gtkToolBarStart_clicked(GtkWidget *widget, gpointer data) {
     // gtk_list_store_append (store_Capture , &iter_Capture);
@@ -772,7 +983,11 @@ void gtkToolBarStop_clicked(GtkWidget *widget, gpointer data) {
 
 void gtkToolBarRestart_clicked(GtkWidget *widget, gpointer data) {
     gtk_list_store_clear (store_Capture);
+    gtk_list_store_clear (store_AppUsage);
+
     col_index = 0;
+    app_index = 0;
+
     gtkToolBarStop_clicked(gtkToolBarStop, data);
     gtkToolBarStart_clicked(gtkToolBarStart, data);
     
@@ -806,12 +1021,20 @@ int start (int   argc, char *argv[]){
     gtkToolBarStop = gtk_builder_get_object(builder, "gtkToolBarStop");
     gtkToolBarRestart = gtk_builder_get_object(builder, "gtkToolBarRestart");
     gtkScrolledWindow = gtk_builder_get_object(builder,"gtkScrolledWindow");
+    gtkScrolledWindow2 = gtk_builder_get_object(builder,"gtkScrolledWindow2");
 
     
     
     view_Capture =  create_view_and_model_scan ();
     gtk_container_add (GTK_CONTAINER (gtkScrolledWindow), view_Capture);
     gtk_widget_set_sensitive(gtkToolBarStop, FALSE);
+
+
+    //AppUsage 
+    view_AppUsage =  create_view_and_model_app ();
+    gtk_container_add (GTK_CONTAINER (gtkScrolledWindow2), view_AppUsage);
+    gtk_widget_set_sensitive(gtkToolBarStop, FALSE);
+
 
     g_signal_connect (gtkToolBarStart, "clicked", gtkToolBarStart_clicked, NULL);
     g_signal_connect (gtkToolBarStop, "clicked", gtkToolBarStop_clicked, NULL);
