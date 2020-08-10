@@ -10,6 +10,8 @@
 #include <pthread.h>
 #include "../livefeaturecollector/LiveFeatureCollector.c"
 
+#include "ip_management.c"
+
 #define _GNU_SOURCE     /* To get defns of NI_MAXSERV and NI_MAXHOST */
 
 // static GtkWidget * create_row (const gchar *text){
@@ -198,6 +200,9 @@ void gtkStoreAppend(gchar *data){
     int B_MAXWIN = atoi(strtok(NULL, "|"));
     int B_MINWIN = atoi(strtok(NULL, "|"));
     double B_MEANWIN = atof(strtok(NULL, "|"));
+
+    insert(APP,FLOWID);
+
     gtk_list_store_append (store_Capture , &iter_Capture);
     gtk_list_store_set (store_Capture, &iter_Capture,
             COL_INDEX_SCAN, col_index,
@@ -310,7 +315,7 @@ void gtkStoreAppend(gchar *data){
 
         gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                       COL_AU_B_NPACK, &bpack,
-                      -1);\
+                      -1);
 
         gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                       COL_AU_B_TOTALLEN, &btotlen,
@@ -1002,6 +1007,8 @@ void gtkToolBarStop_clicked(GtkWidget *widget, gpointer data) {
     gtk_widget_set_sensitive(gtkToolBarStart, TRUE);
     scan_stoped = 1;
     pthread_cancel(ptid_scan);
+
+    check_ipsets();
 }
 
 void gtkToolBarRestart_clicked(GtkWidget *widget, gpointer data) {
@@ -1306,6 +1313,9 @@ int start (int   argc, char *argv[]){
     GObject *gtkListBox;
     GObject *gtkLabelLogo;
     GError *error = NULL;
+
+    init_AppIps();
+
     gtk_init (&argc, &argv);
 
     /* Construct a GtkBuilder instance and load our UI description */
