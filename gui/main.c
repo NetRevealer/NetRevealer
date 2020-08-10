@@ -122,6 +122,11 @@ GtkAdjustment * adj;
 GObject *gtkToolBarStart;
 GObject *gtkToolBarStop;
 GObject *gtkToolBarRestart;
+GObject *gtkToolBarStop;
+GObject *gtkToolBarBlock;
+GObject *gtkToolBarSave;
+GObject *gtkToolBarClear;
+GObject *gtkToolBarQuitMain;
 
 int col_index = 0;
 int app_index = 0;
@@ -129,6 +134,8 @@ int app_index = 0;
 pthread_t ptid_scan; 
 
 void gtkStoreAppend(gchar *data){
+    gdk_threads_init ();
+    gdk_threads_enter ();
     
     char *FLOWID = strtok(data, "|");
     char *APP = strtok(NULL, "|");
@@ -251,8 +258,8 @@ void gtkStoreAppend(gchar *data){
             COL_B_MEANWIN, B_MEANWIN,
             -1);
     
-    // adj = gtk_scrolled_window_get_vadjustment (gtkScrolledWindow);
-    // gtk_adjustment_set_value(adj, gtk_adjustment_get_upper(adj));
+    adj = gtk_scrolled_window_get_vadjustment (gtkScrolledWindow);
+    gtk_adjustment_set_value(adj, gtk_adjustment_get_upper(adj));
     col_index++;
     
     //AppUsage
@@ -348,6 +355,7 @@ void gtkStoreAppend(gchar *data){
       g_free (bpack);
       g_free (btotlen);
       */
+    gdk_threads_leave ();
 }
 
 static GtkTreeModel * create_and_fill_model_scan (void){
@@ -993,6 +1001,15 @@ void gtkToolBarRestart_clicked(GtkWidget *widget, gpointer data) {
     
 
 }
+void gtkToolBarBlock_clicked(GtkWidget *widget, gpointer data) {}
+void gtkToolBarSave_clicked(GtkWidget *widget, gpointer data) {}
+void gtkToolBarClear_clicked(GtkWidget *widget, gpointer data) {
+    gtk_list_store_clear (store_Capture);
+    gtk_list_store_clear (store_AppUsage);
+
+    col_index = 0;
+    app_index = 0;
+}
 
 int start (int   argc, char *argv[]){
     gchar *text;
@@ -1018,8 +1035,14 @@ int start (int   argc, char *argv[]){
     /* Connect signal handlers to the constructed widgets. */
     gtkWindow = gtk_builder_get_object (builder, "main");
     gtkToolBarStart = gtk_builder_get_object(builder, "gtkToolBarStart");
-    gtkToolBarStop = gtk_builder_get_object(builder, "gtkToolBarStop");
     gtkToolBarRestart = gtk_builder_get_object(builder, "gtkToolBarRestart");
+    gtkToolBarStop = gtk_builder_get_object(builder, "gtkToolBarStop");
+    gtkToolBarBlock = gtk_builder_get_object(builder, "gtkToolBarBlock");
+    gtkToolBarSave = gtk_builder_get_object(builder, "gtkToolBarSave");
+    gtkToolBarClear = gtk_builder_get_object(builder, "gtkToolBarClear");
+    gtkToolBarQuitMain = gtk_builder_get_object(builder, "gtkToolBarQuitMain");
+
+
     gtkScrolledWindow = gtk_builder_get_object(builder,"gtkScrolledWindow");
     gtkScrolledWindow2 = gtk_builder_get_object(builder,"gtkScrolledWindow2");
 
@@ -1039,6 +1062,10 @@ int start (int   argc, char *argv[]){
     g_signal_connect (gtkToolBarStart, "clicked", gtkToolBarStart_clicked, NULL);
     g_signal_connect (gtkToolBarStop, "clicked", gtkToolBarStop_clicked, NULL);
     g_signal_connect (gtkToolBarRestart, "clicked", gtkToolBarRestart_clicked, NULL);
+    g_signal_connect (gtkToolBarBlock, "clicked", gtkToolBarBlock_clicked, NULL);
+    g_signal_connect (gtkToolBarSave, "clicked", gtkToolBarSave_clicked, NULL);
+    g_signal_connect (gtkToolBarClear, "clicked", gtkToolBarClear_clicked, NULL);
+    g_signal_connect (gtkToolBarQuitMain, "clicked", G_CALLBACK (gtk_main_quit), NULL);
     g_signal_connect (gtkWindow, "destroy", G_CALLBACK (gtk_main_quit), NULL);
 
     

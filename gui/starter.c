@@ -203,6 +203,7 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
     gtk_window_close(window);
     gtk_window_close(gtkWindow);
     start(argc, argv);
+    gtk_main();
     gtk_main_quit();
     
     
@@ -214,27 +215,17 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
 void gtkWarningCancel_clicked(GtkWidget *widget, gpointer data, GtkWindow *window) {
     gtk_widget_set_sensitive(gtkWindow, TRUE);
     gtk_window_close(window);
-    // GtkListStore  *store;
-    // GtkTreeIter    iter;
-    
-
-    // store = gtk_list_store_new (NUM_COLS_INTERFACES,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
-    // gtk_list_store_append (store, &iter);
-    // gtk_list_store_set (store, &iter,
-    //             COL_INDEX, 19,
-    //             COL_TYPE, "ifa_name",
-    //             COL_TX_PACKETS, 454,
-    //             COL_RX_PACKETS, 546,
-    //             COL_TX_BYTES, 58465,
-    //             COL_RX_BYTES, 546,
-    //             -1);
-            
-     
 
 }
 void gtkErrorOk_clicked(GtkWidget *widget, gpointer data, GtkWidget *window) {
     gtk_window_close (window);
     gtk_widget_set_sensitive(gtkWindow, TRUE);
+}
+
+gtkWarningErrorQuit_clicked(GtkWidget *widget, gpointer data){
+    gtk_window_close(widget);
+    gtk_widget_set_sensitive(gtkWindow, TRUE);
+    
 }
 
 void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
@@ -258,6 +249,7 @@ void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
         gtkErrorInterface = gtk_builder_get_object (errorBuilder, "gtkErrorInterface");
         gtkErrorOk = gtk_builder_get_object (errorBuilder, "gtkErrorOk");
         g_signal_connect (gtkErrorOk, "clicked", gtkErrorOk_clicked, gtkErrorInterface);
+        g_signal_connect (gtkErrorInterface, "destroy", gtkWarningErrorQuit_clicked, NULL);
 
     } else {
         warningBuilder = gtk_builder_new ();
@@ -270,11 +262,9 @@ void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
         gtkWarningBackup = gtk_builder_get_object (warningBuilder, "gtkWarningBackup");
         gtkWarningContinue = gtk_builder_get_object (warningBuilder, "gtkWarningContinue");
         gtkWarningCancel = gtk_builder_get_object (warningBuilder, "gtkWarningCancel");
-        g_signal_connect (gtkWarningBackup, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+        g_signal_connect (gtkWarningBackup, "destroy", gtkWarningErrorQuit_clicked, NULL);
         g_signal_connect (gtkWarningContinue, "clicked", gtkWarningContinue_clicked, gtkWarningBackup);
         g_signal_connect (gtkWarningCancel, "clicked", gtkWarningCancel_clicked, gtkWarningBackup);
-        
-        gtk_main();
 
     }
 
@@ -370,22 +360,10 @@ void gtkToolBarRestore_clicked(GtkWidget *widget, gpointer data, GtkWindow *wind
     gtk_widget_destroy (dialog);
 }
 
-void gtkListStoreUpdate_clicked(GtkWidget *widget, gpointer data){
-
-}
 
 void gtkToolBarQuit_clicked(GtkWidget *widget, gpointer data){
-    for(int i = 0; i<5; i++){
-    gtk_list_store_append (store, &iter);
-            gtk_list_store_set (store, &iter,
-                        COL_INDEX, 9,
-                        COL_TYPE, "ifa->ifa_name",
-                        COL_TX_PACKETS, 64684,
-                        COL_RX_PACKETS, 8646854,
-                        COL_TX_BYTES, 6846,
-                        COL_RX_BYTES, 68465,
-                        -1);
-    }
+    
+    gtk_main_quit();
 }
 int fileexists(const char * filename){
     /* try to open file to read */
@@ -413,7 +391,8 @@ int main (int   argc, char *argv[]){
     GObject *gtkGrid;
     GError *error = NULL;
    
-
+    gdk_threads_init ();
+    gdk_threads_enter ();
 
     gtk_init (&argc, &argv);
     argc = argc;
@@ -434,7 +413,7 @@ int main (int   argc, char *argv[]){
     gtkToolBarRestore = gtk_builder_get_object(builder, "gtkToolBarRestore");
     gtkToolBarQuit = gtk_builder_get_object(builder, "gtkToolBarQuit");
     view = create_view_and_model ();
-    // gtk_container_add (GTK_CONTAINER (gtkGrid), view);
+    
     gtk_grid_attach ((GtkGrid *)gtkGrid, view, 0, 3, 2, 1);
 
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view));
@@ -445,17 +424,13 @@ int main (int   argc, char *argv[]){
     g_signal_connect (gtkToolBarSelect, "clicked", gtkToolBarSelect_clicked, NULL);
     g_signal_connect (gtkToolBarBackup, "clicked", gtkToolBarBackup_clicked, gtkWindow);
     g_signal_connect (gtkToolBarRestore, "clicked", gtkToolBarRestore_clicked, gtkWindow);
-    // g_signal_connect (gtkToolBarQuit, "clicked", gtkToolBarQuit_clicked, NULL);
-    // g_signal_connect (store, "row-inserted", gtkListStoreUpdate_clicked, NULL);
-    gtk_widget_show_all (gtkWindow);
+    g_signal_connect (gtkToolBarQuit, "clicked", gtkToolBarQuit_clicked, NULL);
     
-
     
-
-    gtk_main ();
+    
+    gtk_widget_show_all (gtkWindow);gtk_main ();
             
-        
-    // printf("\n\n\n\n\n\n\n\nHellow\n\n");
+    gdk_threads_leave ();
     
     return 0;
 }
