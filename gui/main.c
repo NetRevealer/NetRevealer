@@ -127,9 +127,12 @@ GObject *gtkToolBarBlock;
 GObject *gtkToolBarSave;
 GObject *gtkToolBarClear;
 GObject *gtkToolBarQuitMain;
+GObject *gtkWindowMain;
 
 int col_index = 0;
 int app_index = 0;
+gboolean scan_stoped = 1;
+
 
 pthread_t ptid_scan; 
 
@@ -435,6 +438,7 @@ static GtkWidget * create_view_and_model_scan (void){
     
     GtkCellRenderer     *renderer;
     GtkWidget           *view;
+    GtkTreeViewColumn *column;
 
     view = gtk_tree_view_new ();
 
@@ -861,11 +865,14 @@ static GtkWidget * create_view_and_model_scan (void){
 
     gtk_tree_view_set_model (GTK_TREE_VIEW (view), model_Capture);
 
+    for (int i =0; i < 59; i++){
+        column = gtk_tree_view_get_column(view, i);
+        gtk_tree_view_column_set_sort_column_id(column, i);
+    }
+
     /* The tree view has acquired its own reference to the
     *  model, so we can drop ours. That way the model will
     *  be freed automatically when the tree view is destroyed */
-
-    g_object_unref (model_Capture);
 
     return view;
 };
@@ -889,6 +896,7 @@ static GtkWidget * create_view_and_model_app (void){
     
     GtkCellRenderer     *renderer;
     GtkWidget           *view;
+    GtkTreeViewColumn *column;
 
     view = gtk_tree_view_new ();
 
@@ -960,6 +968,11 @@ static GtkWidget * create_view_and_model_app (void){
 
     gtk_tree_view_set_model (GTK_TREE_VIEW (view), model_AppUsage);
 
+    for (int i =0; i < 8; i++){
+        column = gtk_tree_view_get_column(view, i);
+        gtk_tree_view_column_set_sort_column_id(column, i);
+    }
+
     /* The tree view has acquired its own reference to the
     *  model, so we can drop ours. That way the model will
     *  be freed automatically when the tree view is destroyed */
@@ -979,6 +992,7 @@ void gtkToolBarStart_clicked(GtkWidget *widget, gpointer data) {
 
     gtk_widget_set_sensitive(widget, FALSE);
     gtk_widget_set_sensitive(gtkToolBarStop, TRUE);
+    scan_stoped = 0;
     pthread_create(&ptid_scan, NULL, &scan, NULL);
     
 }
@@ -986,6 +1000,7 @@ void gtkToolBarStop_clicked(GtkWidget *widget, gpointer data) {
     
     gtk_widget_set_sensitive(widget, FALSE);
     gtk_widget_set_sensitive(gtkToolBarStart, TRUE);
+    scan_stoped = 1;
     pthread_cancel(ptid_scan);
 }
 
@@ -1002,7 +1017,277 @@ void gtkToolBarRestart_clicked(GtkWidget *widget, gpointer data) {
 
 }
 void gtkToolBarBlock_clicked(GtkWidget *widget, gpointer data) {}
-void gtkToolBarSave_clicked(GtkWidget *widget, gpointer data) {}
+
+void gtkWarningErrorQuitMain_clicked(GtkWidget *widget, gpointer data){
+    gtk_window_close(widget);
+    gtk_widget_set_sensitive(gtkWindowMain, TRUE);
+    
+}
+void gtkErrorOkMain_clicked(GtkWidget *widget, gpointer data, GtkWidget *window) {
+    gtk_window_close (window);
+    gtk_widget_set_sensitive(gtkWindowMain, TRUE);
+}
+
+void gtkToolBarSave_clicked(GtkWidget *widget, gpointer data, GtkWindow *window) {
+    char *FLOWID;
+    char *APP;
+    int NPACK;
+    int TOTALLEN;
+    int MAXLEN;
+    int MINLEN;
+    double MEANLEN;
+    double MAXIAT;
+    double MINIAT;
+    double TOTALIAT;
+    double MEANIAT;
+    double DURATION;
+    int ACKCOUNT;
+    int PSHCOUNT;
+    int RSTCOUNT;
+    int SYNCOUNT;
+    int FINCOUNT;
+    int TOTALWIN;
+    int MAXWIN;
+    int MINWIN;
+    double MEANWIN;
+    int F_NPACK;
+    int F_TOTALLEN;
+    int F_MAXLEN;
+    int F_MINLEN;
+    double F_MEANLEN;
+    double F_MAXIAT;
+    double F_MINIAT;
+    double F_TOTALIAT;
+    double F_MEANIAT;
+    double F_DURATION;
+    int F_ACKCOUNT;
+    int F_PSHCOUNT;
+    int F_RSTCOUNT;
+    int F_SYNCOUNT;
+    int F_FINCOUNT;
+    int F_TOTALWIN;
+    int F_MAXWIN;
+    int F_MINWIN;
+    double F_MEANWIN;
+    int B_NPACK;
+    int B_TOTALLEN;
+    int B_MAXLEN;
+    int B_MINLEN;
+    double B_MEANLEN;
+    double B_MAXIAT;
+    double B_MINIAT;
+    double B_TOTALIAT;
+    double B_MEANIAT;
+    double B_DURATION;
+    int B_ACKCOUNT;
+    int B_PSHCOUNT;
+    int B_SYNCOUNT;
+    int B_FINCOUNT;
+    int B_TOTALWIN;
+    int B_MAXWIN;
+    int B_MINWIN;
+    double B_MEANWIN;
+
+    GtkBuilder *errorBuilder;
+    GtkWidget *gtkErrorWidget;
+    GObject *gtkErrorOk;
+    GError *error = NULL;
+    GtkWidget *dialog;
+    GtkFileChooser *chooser;
+    GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
+    FILE *fp ;
+    gint res;
+    gboolean valid = gtk_tree_model_get_iter_first (store_Capture,
+                                       &iter_Capture);
+    if (scan_stoped){
+        
+        if (!valid){
+            gtk_widget_set_sensitive(gtkWindowMain, FALSE);
+            errorBuilder = gtk_builder_new ();
+            if (gtk_builder_add_from_file (errorBuilder, "error_emptyTable.ui", &error) == 0){
+                g_printerr ("Error loading file: %s\n", error->message);
+                g_clear_error (&error);
+                return 1;
+            }
+            gtkErrorWidget = gtk_builder_get_object (errorBuilder, "gtkErrorEmptyTable");
+            gtkErrorOk = gtk_builder_get_object (errorBuilder, "gtkErrorOk");
+            g_signal_connect (gtkErrorOk, "clicked", gtkErrorOkMain_clicked, gtkErrorWidget);
+            g_signal_connect (gtkErrorWidget, "destroy", gtkWarningErrorQuitMain_clicked, NULL);
+            
+        }
+        else{
+            dialog = gtk_file_chooser_dialog_new ("Save File",
+                                        window,
+                                        action,
+                                        ("_Cancel"),
+                                        GTK_RESPONSE_CANCEL,
+                                        ("_Save"),
+                                        GTK_RESPONSE_ACCEPT,
+                                        NULL);
+            chooser = GTK_FILE_CHOOSER (dialog);
+
+            gtk_file_chooser_set_do_overwrite_confirmation (chooser, TRUE);
+
+            
+            gtk_file_chooser_set_current_name (chooser,
+                                                ("Untitled document.csv"));
+            
+            res = gtk_dialog_run (GTK_DIALOG (dialog));
+            if (res == GTK_RESPONSE_ACCEPT){
+                char *filename;
+                filename = gtk_file_chooser_get_filename (chooser);
+                fp = fopen(filename, "w");
+                g_free (filename);
+            }
+            else {
+                gtk_widget_destroy (dialog);
+                return;
+            }
+
+            while (valid){
+
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_FLOWID, &FLOWID, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_APP, &APP, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_NPACK, &NPACK, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_TOTALLEN, &TOTALLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_MAXLEN, &MAXLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_MINLEN, &MINLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_MEANLEN, &MEANLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_MAXIAT, &MAXIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_MINIAT, &MINIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_TOTALIAT, &TOTALIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_MEANIAT, &MEANIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_DURATION, &DURATION, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_ACKCOUNT, &ACKCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_PSHCOUNT, &PSHCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_RSTCOUNT, &RSTCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_SYNCOUNT, &SYNCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_FINCOUNT, &FINCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_TOTALWIN, &TOTALWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_MAXWIN, &MAXWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_MINWIN, &MINWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_MEANWIN, &MEANWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_NPACK, &F_NPACK, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_TOTALLEN, &F_TOTALLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_MAXLEN, &F_MAXLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_MINLEN, &F_MINLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_MEANLEN, &F_MEANLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_MAXIAT, &F_MAXIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_MINIAT, &F_MINIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_TOTALIAT, &F_TOTALIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_MEANIAT, &F_MEANIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_DURATION, &F_DURATION, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_ACKCOUNT, &F_ACKCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_PSHCOUNT, &F_PSHCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_RSTCOUNT, &F_RSTCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_SYNCOUNT, &F_SYNCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_FINCOUNT, &F_FINCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_TOTALWIN, &F_TOTALWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_MAXWIN, &F_MAXWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_MINWIN, &F_MINWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_F_MEANWIN, &F_MEANWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_NPACK, &B_NPACK, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_TOTALLEN, &B_TOTALLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_MAXLEN, &B_MAXLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_MINLEN, &B_MINLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_MEANLEN, &B_MEANLEN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_MAXIAT, &B_MAXIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_MINIAT, &B_MINIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_TOTALIAT, &B_TOTALIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_MEANIAT, &B_MEANIAT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_DURATION, &B_DURATION, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_ACKCOUNT, &B_ACKCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_PSHCOUNT, &B_PSHCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_SYNCOUNT, &B_SYNCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_FINCOUNT, &B_FINCOUNT, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_TOTALWIN, &B_TOTALWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_MAXWIN, &B_MAXWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_MINWIN, &B_MINWIN, -1);
+                gtk_tree_model_get (model_Capture, &iter_Capture, COL_B_MEANWIN, &B_MEANWIN, -1);
+                fprintf(fp,"%s,%s,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%f,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%f,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%f\n",
+                    FLOWID,
+                    APP,
+                    NPACK,
+                    TOTALLEN,
+                    MAXLEN,
+                    MINLEN,
+                    MEANLEN,
+                    MAXIAT,
+                    MINIAT,
+                    TOTALIAT,
+                    MEANIAT,
+                    DURATION,
+                    ACKCOUNT,
+                    PSHCOUNT,
+                    RSTCOUNT,
+                    SYNCOUNT,
+                    FINCOUNT,
+                    TOTALWIN,
+                    MAXWIN,
+                    MINWIN,
+                    MEANWIN,
+                    F_NPACK,
+                    F_TOTALLEN,
+                    F_MAXLEN,
+                    F_MINLEN,
+                    F_MEANLEN,
+                    F_MAXIAT,
+                    F_MINIAT,
+                    F_TOTALIAT,
+                    F_MEANIAT,
+                    F_DURATION,
+                    F_ACKCOUNT,
+                    F_PSHCOUNT,
+                    F_RSTCOUNT,
+                    F_SYNCOUNT,
+                    F_FINCOUNT,
+                    F_TOTALWIN,
+                    F_MAXWIN,
+                    F_MINWIN,
+                    F_MEANWIN,
+                    B_NPACK,
+                    B_TOTALLEN,
+                    B_MAXLEN,
+                    B_MINLEN,
+                    B_MEANLEN,
+                    B_MAXIAT,
+                    B_MINIAT,
+                    B_TOTALIAT,
+                    B_MEANIAT,
+                    B_DURATION,
+                    B_ACKCOUNT,
+                    B_PSHCOUNT,
+                    B_SYNCOUNT,
+                    B_FINCOUNT,
+                    B_TOTALWIN,
+                    B_MAXWIN,
+                    B_MINWIN,
+                    B_MEANWIN
+                    );
+                valid = gtk_tree_model_iter_next (store_Capture, &iter_Capture);
+
+            
+            }
+        }
+    }
+
+    else {
+        gtk_widget_set_sensitive(gtkWindowMain, FALSE);
+        errorBuilder = gtk_builder_new ();
+        if (gtk_builder_add_from_file (errorBuilder, "error_stopScan.ui", &error) == 0){
+            g_printerr ("Error loading file: %s\n", error->message);
+            g_clear_error (&error);
+            return 1;
+        }
+        gtkErrorWidget = gtk_builder_get_object (errorBuilder, "gtkErrorStopScan");
+        gtkErrorOk = gtk_builder_get_object (errorBuilder, "gtkErrorOk");
+        g_signal_connect (gtkErrorOk, "clicked", gtkErrorOkMain_clicked, gtkErrorWidget);
+        g_signal_connect (gtkErrorWidget, "destroy", gtkWarningErrorQuitMain_clicked, NULL);
+    }
+
+}
+
+
 void gtkToolBarClear_clicked(GtkWidget *widget, gpointer data) {
     gtk_list_store_clear (store_Capture);
     gtk_list_store_clear (store_AppUsage);
@@ -1018,7 +1303,6 @@ int start (int   argc, char *argv[]){
     GtkBuilder *builder;
     GObject *gtkToolbar;
     GObject *gtkToolButton;
-    GObject *gtkWindow;
     GObject *gtkListBox;
     GObject *gtkLabelLogo;
     GError *error = NULL;
@@ -1033,7 +1317,7 @@ int start (int   argc, char *argv[]){
         }
 
     /* Connect signal handlers to the constructed widgets. */
-    gtkWindow = gtk_builder_get_object (builder, "main");
+    gtkWindowMain = gtk_builder_get_object (builder, "main");
     gtkToolBarStart = gtk_builder_get_object(builder, "gtkToolBarStart");
     gtkToolBarRestart = gtk_builder_get_object(builder, "gtkToolBarRestart");
     gtkToolBarStop = gtk_builder_get_object(builder, "gtkToolBarStop");
@@ -1063,14 +1347,14 @@ int start (int   argc, char *argv[]){
     g_signal_connect (gtkToolBarStop, "clicked", gtkToolBarStop_clicked, NULL);
     g_signal_connect (gtkToolBarRestart, "clicked", gtkToolBarRestart_clicked, NULL);
     g_signal_connect (gtkToolBarBlock, "clicked", gtkToolBarBlock_clicked, NULL);
-    g_signal_connect (gtkToolBarSave, "clicked", gtkToolBarSave_clicked, NULL);
+    g_signal_connect (gtkToolBarSave, "clicked", gtkToolBarSave_clicked, gtkWindowMain);
     g_signal_connect (gtkToolBarClear, "clicked", gtkToolBarClear_clicked, NULL);
     g_signal_connect (gtkToolBarQuitMain, "clicked", G_CALLBACK (gtk_main_quit), NULL);
-    g_signal_connect (gtkWindow, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+    g_signal_connect (gtkWindowMain, "destroy", G_CALLBACK (gtk_main_quit), NULL);
 
     
 
-    gtk_widget_show_all(gtkWindow);
+    gtk_widget_show_all(gtkWindowMain);
 
     
     gtk_main ();

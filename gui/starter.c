@@ -41,12 +41,14 @@ int argc;
 char *argv[];
 gchar *selected_type;
 gboolean network_rules_backup = 1;
-GObject *gtkWindow;
+GObject *gtkWindowStarter;
 GtkTreeSelection *selection;
 GtkListStore  *store;
 GtkTreeModel *model;
 GtkTreeIter iter;
 GtkWidget *view;
+
+
 
 static GtkTreeModel * create_and_fill_model (void){
     int i = 0;
@@ -97,6 +99,7 @@ static GtkWidget * create_view_and_model (void){
     GtkCellRenderer     *renderer;
     GtkTreeModel        *model;
     GtkWidget           *view;
+    GtkTreeViewColumn *column;
 
     view = gtk_tree_view_new ();
 
@@ -107,6 +110,7 @@ static GtkWidget * create_view_and_model (void){
                                                 renderer,
                                                 "text", COL_INDEX,
                                                 NULL);
+                                                    
 
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -151,6 +155,11 @@ static GtkWidget * create_view_and_model (void){
     model = create_and_fill_model ();
 
     gtk_tree_view_set_model (GTK_TREE_VIEW (view), model);
+
+    for (int i =0; i < 6; i++){
+        column = gtk_tree_view_get_column(view, i);
+        gtk_tree_view_column_set_sort_column_id(column, i);
+    }
 
     /* The tree view has acquired its own reference to the
     *  model, so we can drop ours. That way the model will
@@ -201,7 +210,7 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
     // }
     // mainWindow = gtk_builder_get_object (gtkmainWindow, "mainWindow");
     gtk_window_close(window);
-    gtk_window_close(gtkWindow);
+    gtk_window_close(gtkWindowStarter);
     start(argc, argv);
     gtk_main();
     gtk_main_quit();
@@ -213,18 +222,18 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
 }
 
 void gtkWarningCancel_clicked(GtkWidget *widget, gpointer data, GtkWindow *window) {
-    gtk_widget_set_sensitive(gtkWindow, TRUE);
+    gtk_widget_set_sensitive(gtkWindowStarter, TRUE);
     gtk_window_close(window);
 
 }
 void gtkErrorOk_clicked(GtkWidget *widget, gpointer data, GtkWidget *window) {
     gtk_window_close (window);
-    gtk_widget_set_sensitive(gtkWindow, TRUE);
+    gtk_widget_set_sensitive(gtkWindowStarter, TRUE);
 }
 
-gtkWarningErrorQuit_clicked(GtkWidget *widget, gpointer data){
+void gtkWarningErrorQuit_clicked(GtkWidget *widget, gpointer data){
     gtk_window_close(widget);
-    gtk_widget_set_sensitive(gtkWindow, TRUE);
+    gtk_widget_set_sensitive(gtkWindowStarter, TRUE);
     
 }
 
@@ -238,7 +247,7 @@ void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
     GObject *gtkWarningCancel;
     GError *error = NULL;
     
-    gtk_widget_set_sensitive(gtkWindow, FALSE);
+    gtk_widget_set_sensitive(gtkWindowStarter, FALSE);
     if (selected_type == NULL){
         errorBuilder = gtk_builder_new ();
         if (gtk_builder_add_from_file (errorBuilder, "error_interface.ui", &error) == 0){
@@ -406,7 +415,7 @@ int main (int   argc, char *argv[]){
     }
 
     /* Connect signal handlers to the constructed widgets. */
-    gtkWindow = gtk_builder_get_object (builder, "starter");
+    gtkWindowStarter = gtk_builder_get_object (builder, "starter");
     gtkGrid =  gtk_builder_get_object(builder, "gtkGrid");
     gtkToolBarSelect = gtk_builder_get_object(builder, "gtkToolBarSelect");
     gtkToolBarBackup = gtk_builder_get_object(builder, "gtkToolBarBackup");
@@ -420,15 +429,16 @@ int main (int   argc, char *argv[]){
 
     gtk_tree_selection_set_select_function(selection, view_selection_func, NULL, NULL);
     
-    g_signal_connect (gtkWindow, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+    g_signal_connect (gtkWindowStarter, "destroy", G_CALLBACK (gtk_main_quit), NULL);
     g_signal_connect (gtkToolBarSelect, "clicked", gtkToolBarSelect_clicked, NULL);
-    g_signal_connect (gtkToolBarBackup, "clicked", gtkToolBarBackup_clicked, gtkWindow);
-    g_signal_connect (gtkToolBarRestore, "clicked", gtkToolBarRestore_clicked, gtkWindow);
+    g_signal_connect (gtkToolBarBackup, "clicked", gtkToolBarBackup_clicked, gtkWindowStarter);
+    g_signal_connect (gtkToolBarRestore, "clicked", gtkToolBarRestore_clicked, gtkWindowStarter);
     g_signal_connect (gtkToolBarQuit, "clicked", gtkToolBarQuit_clicked, NULL);
     
     
     
-    gtk_widget_show_all (gtkWindow);gtk_main ();
+    gtk_widget_show_all (gtkWindowStarter);
+    gtk_main ();
             
     gdk_threads_leave ();
     
