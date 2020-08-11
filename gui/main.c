@@ -136,7 +136,10 @@ int app_index = 0;
 gboolean scan_stoped = 1;
 
 
-pthread_t ptid_scan; 
+
+
+pthread_t ptid_scan;
+pthread_t ptid_insretProtoIP;
 
 void gtkStoreAppend(gchar *data){
     gdk_threads_init ();
@@ -200,8 +203,7 @@ void gtkStoreAppend(gchar *data){
     int B_MAXWIN = atoi(strtok(NULL, "|"));
     int B_MINWIN = atoi(strtok(NULL, "|"));
     double B_MEANWIN = atof(strtok(NULL, "|"));
-
-    insert(APP,FLOWID);
+    
 
     gtk_list_store_append (store_Capture , &iter_Capture);
     gtk_list_store_set (store_Capture, &iter_Capture,
@@ -265,6 +267,7 @@ void gtkStoreAppend(gchar *data){
             COL_B_MINWIN, B_MINWIN,
             COL_B_MEANWIN, B_MEANWIN,
             -1);
+    insert(APP,FLOWID);
     
     adj = gtk_scrolled_window_get_vadjustment (gtkScrolledWindow);
     gtk_adjustment_set_value(adj, gtk_adjustment_get_upper(adj));
@@ -999,7 +1002,18 @@ void gtkToolBarRestart_clicked(GtkWidget *widget, gpointer data) {
     
 
 }
-void gtkToolBarBlock_clicked(GtkWidget *widget, gpointer data) {}
+
+void gtkButtonBlockApp_clicked(GtkWidget *widget, gpointer data) {
+    for (int i = 0; i < 7; i++){
+        if (AppsToBlock[i] == NULL){
+            AppsToBlock[i] = currAppToBlock;
+        }
+    }
+    block_App_init(currAppToBlock);
+    gtk_window_close(widget);
+    gtk_widget_set_sensitive(gtkWindowMain, TRUE);
+}
+
 
 void gtkWarningErrorQuitMain_clicked(GtkWidget *widget, gpointer data){
     gtk_window_close(widget);
@@ -1009,6 +1023,133 @@ void gtkWarningErrorQuitMain_clicked(GtkWidget *widget, gpointer data){
 void gtkErrorOkMain_clicked(GtkWidget *widget, gpointer data, GtkWidget *window) {
     gtk_window_close (window);
     gtk_widget_set_sensitive(gtkWindowMain, TRUE);
+}
+
+comboBox_on_changed (GtkComboBox *widget, gpointer   user_data){
+    currAppToBlock = gtk_combo_box_text_get_active_text (widget);
+}
+
+
+void gtkToolBarBlock_clicked(GtkWidget *widget, gpointer data) {
+    GtkBuilder *blockAppBuilder;
+    GtkWidget *gtkBlockApp;
+    GObject *gtkButtonBlockApp;
+    GObject *gtkButtonCancelBlock;
+    GtkComboBoxText *gtkComboBoxBlock;
+    GError *error = NULL;
+    
+    currAppToBlock = NULL;
+    gboolean found = FALSE;
+    
+    gtk_widget_set_sensitive(gtkWindowMain, FALSE);
+    blockAppBuilder = gtk_builder_new ();
+    if (gtk_builder_add_from_file (blockAppBuilder, "block_app.ui", &error) == 0){
+        g_printerr ("Error loading file: %s\n", error->message);
+        g_clear_error (&error);
+        return 1;
+    }
+    gtkBlockApp = gtk_builder_get_object (blockAppBuilder, "gtkBlockApp");
+    gtkComboBoxBlock = gtk_builder_get_object (blockAppBuilder, "gtkComboBoxBlock");
+    gtkButtonBlockApp = gtk_builder_get_object (blockAppBuilder, "gtkButtonBlockApp");
+    gtkButtonCancelBlock = gtk_builder_get_object (blockAppBuilder, "gtkButtonCancelBlock");
+    
+    g_signal_connect (gtkButtonBlockApp, "clicked", gtkButtonBlockApp_clicked, NULL);
+    g_signal_connect (gtkButtonCancelBlock, "clicked", gtkWarningErrorQuitMain_clicked, NULL);
+    g_signal_connect (gtkBlockApp, "destroy", gtkWarningErrorQuitMain_clicked, NULL);
+    g_signal_connect (gtkComboBoxBlock, "changed", G_CALLBACK (comboBox_on_changed), NULL);
+    if (youtube.size > 0){
+        for (int i = 0; i < 7; i++){
+            if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], "Youtube") == 0){
+                found = TRUE;
+                break;
+            }
+            
+        }
+        if (!found)
+            gtk_combo_box_text_append_text(gtkComboBoxBlock, "Youtube");
+    }
+
+    found = FALSE;
+    
+    if (instagram.size > 0){
+        for (int i = 0; i < 7; i++){
+            if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], "Instagram") == 0){
+                found = TRUE;
+                break;
+            }
+
+        }
+        if (!found)
+            gtk_combo_box_text_append_text(gtkComboBoxBlock, "Instagram");
+    }
+
+    found = FALSE;
+    if (twitch.size > 0){
+         for (int i = 0; i < 7; i++){
+            if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], "Twitch") == 0){
+                found = TRUE;
+                break;
+            }
+
+        }
+        if (!found)
+            gtk_combo_box_text_append_text(gtkComboBoxBlock, "Twitch");
+    }
+
+    found = FALSE;
+
+    if (skype.size > 0){
+        for (int i = 0; i < 7; i++){
+            if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], "Skype") == 0){
+                found = TRUE;
+                break;
+            }
+
+        }
+        if (!found)
+            gtk_combo_box_text_append_text(gtkComboBoxBlock, "Skype");
+    }
+
+    found = FALSE;
+
+    if (googlemeet.size > 0){
+        for (int i = 0; i < 7; i++){
+            if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], "Googlemeet") == 0){
+                found = TRUE;
+                break;
+            }
+
+        }
+        if (!found)
+            gtk_combo_box_text_append_text(gtkComboBoxBlock, "Googlemeet");
+    }
+    
+    found = FALSE;
+    if (anghami.size > 0){
+        for (int i = 0; i < 7; i++){
+            if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], "Anghami") == 0){
+                found = TRUE;
+                break;
+            }
+
+        }
+        if (!found)
+            gtk_combo_box_text_append_text(gtkComboBoxBlock, "Anghami");
+    }
+
+    found = FALSE;
+    if (others.size > 0){
+        for (int i = 0; i < 7; i++){
+            if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], "Others") == 0){
+                found = TRUE;
+                break;
+            }
+
+        }
+        if (!found)
+            gtk_combo_box_text_append_text(gtkComboBoxBlock, "Others");
+    }
+
 }
 
 void gtkToolBarSave_clicked(GtkWidget *widget, gpointer data, GtkWindow *window) {

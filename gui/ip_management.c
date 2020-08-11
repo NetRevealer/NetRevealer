@@ -17,6 +17,9 @@ IpProtoSet anghami;
 IpProtoSet twitch;
 IpProtoSet others;
 
+char *AppsToBlock[7];
+char *currAppToBlock;
+
 //#########################
 void init_AppIps(){
 
@@ -43,7 +46,7 @@ void init_AppIps(){
 
 }
 
-void insert_IpProto(IpProtoSet *set, char **flowid){
+void insert_IpProto(IpProtoSet *set, char *flowid, char *APP){
     int i;
     int contains ;
     char *ipproto[20];
@@ -76,15 +79,16 @@ void insert_IpProto(IpProtoSet *set, char **flowid){
     if(contains == 0){
         strcpy(set->ipset[set->size],ipproto);
         set->size += 1;
+        block_ip(ipproto, APP);
     }
 }
 
-void insert(char *APP, char **flowid){
-
+void insert(char *APP, char *flowid){
+    
     int index = mapper(APP);
     IpProtoSet *set = APP_IPs[index];
 
-    insert_IpProto(set,flowid);
+    insert_IpProto(set, flowid, APP);
 
 }
 
@@ -122,13 +126,40 @@ int mapper(char *APP){
     }
 
 }
-/*
-void block_App(char *APP){
+
+void block_App_init(char *APP){
     int index = mapper(APP);
     IpProtoSet *set = APP_IPs[index];
+    
+    for (int i = 0 ; i < set->size; i++){
+        char blockAppCMD[512] = "iptables -A INPUT -s ";
+        char * copy = malloc(strlen(set->ipset[i]) + 1); 
+        strcpy(copy, set->ipset[i]);
 
+        strtok(copy, "-");
+        strcat(blockAppCMD, strtok(NULL, "-"));
+        strcat(blockAppCMD, "/8 -j DROP");
+        system(blockAppCMD);
+        g_print("blocked ===> [%s]\n", blockAppCMD);
+    }
 
-}*/
+}
+
+void block_ip(char *flowid, char *APP){
+
+    for (int i = 0; i < 7; i++){
+            if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], APP) == 0){
+                char blockAppCMD[512] = "iptables -A INPUT -s ";
+                strtok(flowid, "-");
+                strcat(blockAppCMD, strtok(NULL, "-"));
+                strcat(blockAppCMD, "/8 -j DROP");
+                system(blockAppCMD);
+                g_print("blocked with [%s]\n", blockAppCMD);
+                break;
+            }
+
+    }
+}
 
 void check_ipsets(){
 
