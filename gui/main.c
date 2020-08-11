@@ -275,25 +275,24 @@ void gtkStoreAppend(gchar *data){
     gboolean done;
 
     gchar *app_name;
-    gint *pack;
-    gint *totlen;
-    gint *fpack;
-    gint *ftotlen;
-    gint *bpack;
-    gint *btotlen;
+    int pack;
+    int totlen;
+    int fpack;
+    int ftotlen;
+    int bpack;
+    int btotlen;
 
     done = FALSE;
     
     valid = gtk_tree_model_get_iter_first (store_AppUsage,
                                        &iter_AppUsage);
     
-    while (valid)
-    {
+    while (valid){
 
         gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                             COL_AU_APP, &app_name,
                             -1);
-
+    
 
     if(strcmp(app_name, APP) == 0){
 
