@@ -310,11 +310,11 @@ void gtkStoreAppend(gchar *data){
 
         gtk_list_store_set(store_AppUsage,&iter_AppUsage,
                             2,(NPACK + pack),
-                            3,(TOTALLEN + totlen),
+                            3,(TOTALLEN + totlen) / 1024,
                             4,(F_NPACK + fpack),
-                            5,(F_TOTALLEN + ftotlen),
+                            5,(F_TOTALLEN + ftotlen) / 1024,
                             6,(B_NPACK + bpack),
-                            7,(B_TOTALLEN + btotlen),
+                            7,(B_TOTALLEN + btotlen) 1024,
                             -1);
                           
         done = TRUE;
@@ -332,11 +332,11 @@ void gtkStoreAppend(gchar *data){
             COL_AU_INDEX_APP, app_index,
             COL_AU_APP, APP,
             COL_AU_NPACK, NPACK,
-            COL_AU_TOTALLEN, TOTALLEN,
+            COL_AU_TOTALLEN, TOTALLEN / 1024,
             COL_AU_F_NPACK, F_NPACK,
-            COL_AU_F_TOTALLEN, F_TOTALLEN,
+            COL_AU_F_TOTALLEN, F_TOTALLEN / 1024,
             COL_AU_B_NPACK, B_NPACK,
-            COL_AU_B_TOTALLEN, B_TOTALLEN,
+            COL_AU_B_TOTALLEN, B_TOTALLEN / 1024,
             -1);
 
         app_index++;
@@ -911,7 +911,7 @@ static GtkWidget * create_view_and_model_app (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "Totallen",  
+                                                "Traffic size (KB)",  
                                                 renderer,
                                                 "text", COL_AU_TOTALLEN,
                                                 NULL);
@@ -927,7 +927,7 @@ static GtkWidget * create_view_and_model_app (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "F_Totallen",  
+                                                "Upload KB",  
                                                 renderer,
                                                 "text", COL_AU_F_TOTALLEN,
                                                 NULL);
@@ -943,7 +943,7 @@ static GtkWidget * create_view_and_model_app (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "B_Totallen",  
+                                                "Download KB",  
                                                 renderer,
                                                 "text", COL_AU_B_TOTALLEN,
                                                 NULL);                                                                                                                                                                                
