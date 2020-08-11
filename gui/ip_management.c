@@ -123,7 +123,10 @@ int mapper(char *APP){
 
 }
 /*
-void block_App(char *APP[]){
+void block_App(char *APP){
+    int index = mapper(APP);
+    IpProtoSet *set = APP_IPs[index];
+
 
 }*/
 

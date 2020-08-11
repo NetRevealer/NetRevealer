@@ -298,27 +298,12 @@ void gtkStoreAppend(gchar *data){
 
         gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                       COL_AU_NPACK, &pack,
-                      -1);
-
-        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                       COL_AU_TOTALLEN, &totlen,
-                      -1);
-
-        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                       COL_AU_F_NPACK, &fpack,
-                      -1);
-
-        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                       COL_AU_F_TOTALLEN, &ftotlen,
-                      -1);
-
-        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                       COL_AU_B_NPACK, &bpack,
-                      -1);
-
-        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                       COL_AU_B_TOTALLEN, &btotlen,
-                      -1);                                                                      
+                      -1);                                                                     
 
         gtk_list_store_set(store_AppUsage,&iter_AppUsage,
                             2,(NPACK + pack),
@@ -328,7 +313,7 @@ void gtkStoreAppend(gchar *data){
                             6,(B_NPACK + bpack),
                             7,(B_TOTALLEN + btotlen),
                             -1);
-
+                          
         done = TRUE;
         break;                  
       }
@@ -353,15 +338,7 @@ void gtkStoreAppend(gchar *data){
 
         app_index++;
     }
-     /*   
-      g_free (app_name);
-      g_free (pack);
-      g_free (totlen);
-      g_free (fpack);
-      g_free (ftotlen);
-      g_free (bpack);
-      g_free (btotlen);
-      */
+    
     gdk_threads_leave ();
 }
 
