@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <linux/if_link.h>
 #include <pthread.h>
+#include <python3.8/Python.h>
 #include "../livefeaturecollector/LiveFeatureCollector.c"
 
 #include "ip_management.c"
@@ -139,10 +140,13 @@ GObject *gtkToolBarBackupMain;
 GObject *gtkToolBarRestoreMain;
 GObject *gtkToolBarDefaultMain;
 GObject *gtkLabelInterface;
+GObject *gtkImagePlot;
+GObject *gtkToolBarPlot;
 
 int col_index = 0;
 int app_index = 0;
 gboolean scan_stoped = 1;
+gboolean plotButtonClicked = 0;
 
 // Youtube, Twitch, Instagram, Googlemeet, Skype, Anghami, Others.
 char *COLORS[7] = {"#ff9191","#b0ffff","#ffff99","#c6c6c6","#3936ff","#b4ffa3","#ffffff"};
@@ -150,12 +154,22 @@ gchar *devInterface;
 
 
 
+
+
 pthread_t ptid_scan;
 pthread_t ptid_insretProtoIP;
+// pthread_t ptid_drawPlot;
 
 void gtkToolBarRestore_clicked(GtkWidget *widget, gpointer data, GtkWindow *window);
 void gtkToolBarBackup_clicked(GtkWidget *widget, gpointer data, GtkWindow *window);
 void gtkToolBarDefault_clicked(GtkWidget *widget, gpointer data);
+
+void gtkToolBarPlot_clicked(GtkWidget *widget, gpointer data){
+
+    plotButtonClicked = 1;
+        
+
+}
 
 void gtkStoreAppend(gchar *data){
     gdk_threads_init ();
@@ -315,6 +329,8 @@ void gtkStoreAppend(gchar *data){
     int bpack;
     int btotlen;
 
+    
+    char data_to_plot[1024] = "";
     done = FALSE;
     
     valid = gtk_tree_model_get_iter_first (store_AppUsage,
@@ -325,36 +341,46 @@ void gtkStoreAppend(gchar *data){
         gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
                             COL_AU_APP, &app_name,
                             -1);
+        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
+                COL_AU_NPACK, &pack,
+                COL_AU_TOTALLEN, &totlen,
+                COL_AU_F_NPACK, &fpack,
+                COL_AU_F_TOTALLEN, &ftotlen,
+                COL_AU_B_NPACK, &bpack,
+                COL_AU_B_TOTALLEN, &btotlen,
+                -1);      
     
 
-    if(strcmp(app_name, APP) == 0){
+        if(strcmp(app_name, APP) == 0){                                                                   
 
-        gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
-                      COL_AU_NPACK, &pack,
-                      COL_AU_TOTALLEN, &totlen,
-                      COL_AU_F_NPACK, &fpack,
-                      COL_AU_F_TOTALLEN, &ftotlen,
-                      COL_AU_B_NPACK, &bpack,
-                      COL_AU_B_TOTALLEN, &btotlen,
-                      -1);                                                                     
-
-        gtk_list_store_set(store_AppUsage,&iter_AppUsage,
-                            2,(NPACK + pack),
-                            3,(TOTALLEN / 1024) + totlen,
-                            4,(F_NPACK + fpack),
-                            5,(F_TOTALLEN / 1024) + ftotlen,
-                            6,(B_NPACK + bpack),
-                            7,(B_TOTALLEN / 1024) + btotlen,
-                            -1);
-                          
-        done = TRUE;
-        break;                  
-      }
-
-    valid = gtk_tree_model_iter_next (store_AppUsage,
-                        &iter_AppUsage);
+            gtk_list_store_set(store_AppUsage,&iter_AppUsage,
+                                2,(NPACK + pack),
+                                3,(TOTALLEN / 1024) + totlen,
+                                4,(F_NPACK + fpack),
+                                5,(F_TOTALLEN / 1024) + ftotlen,
+                                6,(B_NPACK + bpack),
+                                7,(B_TOTALLEN / 1024) + btotlen,
+                                -1);
+                            
+            done = TRUE;
+            // break;                  
+        }
+        strcat(data_to_plot, app_name);
+        strcat(data_to_plot, ":");
+        char converted_packs[50]; 
+        sprintf(converted_packs, "%d", pack);
+        strcat(data_to_plot, converted_packs);
+        strcat(data_to_plot, ",");
+    
+    
+        valid = gtk_tree_model_iter_next (store_AppUsage,
+                            &iter_AppUsage);
     
     }
+
+    // g_print("%s\n", data_to_plot);
+    
+    // call to draw_plot
 
     if(!(done)){
         gtk_list_store_append (store_AppUsage , &iter_AppUsage);
@@ -383,8 +409,18 @@ void gtkStoreAppend(gchar *data){
 
         app_index++;
     }
+
+    if (plotButtonClicked){
+        pargs_plot = Py_BuildValue("(s)", data_to_plot);
+        PyObject *result = PyObject_CallObject(plot_app_usage, pargs_plot);
+        gtk_image_set_from_file (gtkImagePlot, "appusage.png");
+        plotButtonClicked = 0;
+    }
     
     gdk_threads_leave ();
+    
+    
+    
 }
 
 static GtkTreeModel * create_and_fill_model_scan (void){
@@ -1714,9 +1750,36 @@ int start (int   argc, char *argv[], gchar *dev){
     // gdk_threads_enter ();
     devInterface = dev;
     init_AppIps();
+    // Py_Initialize();
+    // PyObject *sys = PyImport_ImportModule("sys");
+    // PyObject *path = PyObject_GetAttrString(sys, "path");
+
+    // PyList_Append(path, PyUnicode_FromString("../gui/"));
+    
+    /* 1st: Import the module */
+    // PyObject* ModuleString2 = PyUnicode_FromString((char*) "appusage_plot");
+    // if (!ModuleString2) {
+    //     PyErr_Print();
+    //     printf("Error formating python script\n");
+    // }
+
+    // PyObject* Module2 = PyImport_Import(ModuleString2);
+    // if (!Module2) {
+    //     PyErr_Print();
+    //     printf("Error importing python script\n");
+    // }
+
+    // /* 2nd: Getting reference to the function */
+    // plot_app_usage = PyObject_GetAttrString(Module2, (char*)"plot_app_usage");
+    // if (!plot_app_usage) {
+    //     PyErr_Print();
+    //     printf("Pass valid argument to link_list()\n");
+    // }
+    // Py_Finalize();
+
 
     gtk_init (&argc, &argv);
-
+    
     /* Construct a GtkBuilder instance and load our UI description */
     builder = gtk_builder_new ();
     if (gtk_builder_add_from_file (builder, "main.ui", &error) == 0){
@@ -1740,7 +1803,9 @@ int start (int   argc, char *argv[], gchar *dev){
     gtkToolBarBackupMain =  gtk_builder_get_object(builder, "gtkToolBarBackupMain");
     gtkToolBarRestoreMain =  gtk_builder_get_object(builder, "gtkToolBarRestoreMain");
     gtkToolBarDefaultMain =  gtk_builder_get_object(builder, "gtkToolBarDefaultMain");
-
+    gtkImagePlot = gtk_builder_get_object(builder, "gtkImagePlot");
+    gtkToolBarPlot = gtk_builder_get_object(builder, "gtkToolBarPlot");
+    
 
     gtkScrolledWindow = gtk_builder_get_object(builder,"gtkScrolledWindow");
     gtkScrolledWindow2 = gtk_builder_get_object(builder,"gtkScrolledWindow2");
@@ -1775,6 +1840,7 @@ int start (int   argc, char *argv[], gchar *dev){
     g_signal_connect (gtkToolBarRestoreMain, "clicked", gtkToolBarRestore_clicked, NULL);
     // g_signal_connect (gtkToolBarChangeNet, "clicked", gtkToolBarChangeNet_clicked, NULL);
     g_signal_connect (gtkToolBarDefaultMain, "clicked", gtkToolBarDefault_clicked, NULL);
+    g_signal_connect (gtkToolBarPlot, "clicked", gtkToolBarPlot_clicked, NULL);
 
     
 
