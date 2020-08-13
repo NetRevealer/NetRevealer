@@ -57,7 +57,7 @@
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Restore</property>
                 <property name="use_underline">True</property>
-                <property name="icon_name">edit-redo</property>
+                <property name="icon_name">document-open-recent</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -71,7 +71,7 @@
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Default</property>
                 <property name="use_underline">True</property>
-                <property name="icon_name">document-open-recent</property>
+                <property name="icon_name">document-properties</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -85,7 +85,7 @@
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Quit</property>
                 <property name="use_underline">True</property>
-                <property name="icon_name">document-revert</property>
+                <property name="icon_name">application-exit</property>
               </object>
               <packing>
                 <property name="expand">False</property>

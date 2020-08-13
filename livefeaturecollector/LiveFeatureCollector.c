@@ -47,9 +47,13 @@ char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*pack
 char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet,bool direction);
 
 FILE *output_file;
-PyObject* extractFeatures_fromFlow;
-PyObject* pargs;
+PyObject *extractFeatures_fromFlow;
+PyObject *pargs;
 PyObject *result;
+
+PyObject *pargs_plot;
+PyObject *plot_app_usage;
+
 
 char host[256];
 struct hostent *host_entry;
@@ -418,9 +422,14 @@ char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pac
 
 
 
-int scan(){
+int scan(char *dev){
     // int argc = 3;
-    char dev[] = "wlp6s0";		/* Device to sniff on */
+    
+    if (dev == NULL){
+        printf("interface is NULL \n");
+        return;
+    }
+
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t* liveCapture;
     struct bpf_program fp;      /* hold compiled program     */
@@ -436,6 +445,8 @@ int scan(){
     PyObject *sys = PyImport_ImportModule("sys");
     PyObject *path = PyObject_GetAttrString(sys, "path");
     PyList_Append(path, PyUnicode_FromString("../livefeaturecollector/"));
+    PyList_Append(path, PyUnicode_FromString("../gui/"));
+    
     
     /* 1st: Import the module */
     PyObject* ModuleString = PyUnicode_FromString((char*) "LiveFeatureExtractor");
@@ -453,6 +464,25 @@ int scan(){
     /* 2nd: Getting reference to the function */
     extractFeatures_fromFlow = PyObject_GetAttrString(Module, (char*)"extractFeatures_fromFlow");
     if (!extractFeatures_fromFlow) {
+        PyErr_Print();
+        printf("Pass valid argument to link_list()\n");
+    }
+
+    PyObject* ModuleString2 = PyUnicode_FromString((char*) "appusage_plot");
+    if (!ModuleString2) {
+        PyErr_Print();
+        printf("Error formating python script\n");
+    }
+
+    PyObject* Module2 = PyImport_Import(ModuleString2);
+    if (!Module2) {
+        PyErr_Print();
+        printf("Error importing python script\n");
+    }
+
+    /* 2nd: Getting reference to the function */
+    plot_app_usage = PyObject_GetAttrString(Module2, (char*)"plot_app_usage");
+    if (!plot_app_usage) {
         PyErr_Print();
         printf("Pass valid argument to link_list()\n");
     }

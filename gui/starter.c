@@ -39,14 +39,16 @@ enum interface_cols{
 
 int argc;
 char *argv[];
-gchar *selected_type;
+gchar *selected_interface;
 gboolean network_rules_backup = 1;
-GObject *gtkWindow;
+GObject *gtkWindowStarter;
 GtkTreeSelection *selection;
 GtkListStore  *store;
 GtkTreeModel *model;
 GtkTreeIter iter;
 GtkWidget *view;
+
+
 
 static GtkTreeModel * create_and_fill_model (void){
     int i = 0;
@@ -97,6 +99,7 @@ static GtkWidget * create_view_and_model (void){
     GtkCellRenderer     *renderer;
     GtkTreeModel        *model;
     GtkWidget           *view;
+    GtkTreeViewColumn *column;
 
     view = gtk_tree_view_new ();
 
@@ -107,6 +110,7 @@ static GtkWidget * create_view_and_model (void){
                                                 renderer,
                                                 "text", COL_INDEX,
                                                 NULL);
+                                                    
 
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -152,6 +156,11 @@ static GtkWidget * create_view_and_model (void){
 
     gtk_tree_view_set_model (GTK_TREE_VIEW (view), model);
 
+    for (int i =0; i < 6; i++){
+        column = gtk_tree_view_get_column(view, i);
+        gtk_tree_view_column_set_sort_column_id(column, i);
+    }
+
     /* The tree view has acquired its own reference to the
     *  model, so we can drop ours. That way the model will
     *  be freed automatically when the tree view is destroyed */
@@ -174,7 +183,7 @@ gboolean view_selection_func (GtkTreeSelection *selection,
         gtk_tree_model_get(model, &iter, COL_TYPE, &type, -1);
 
         if (!path_currently_selected){
-            selected_type = type;
+            selected_interface = type;
             g_print ("%s is going to be selected.\n", type);
         }
         else{
@@ -201,8 +210,9 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
     // }
     // mainWindow = gtk_builder_get_object (gtkmainWindow, "mainWindow");
     gtk_window_close(window);
-    gtk_window_close(gtkWindow);
-    start(argc, argv);
+    gtk_window_close(gtkWindowStarter);
+    start(argc, argv, selected_interface);
+    gtk_main();
     gtk_main_quit();
     
     
@@ -210,31 +220,27 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
 
 
 }
+void gtkToolBarDefault_clicked(GtkWidget *widget, gpointer data){
+    char restore_Backup[256] = "iptables-restore < ";
+    char *filename = "/home/.default.rules";
+    strcat(restore_Backup, filename);
+    system(restore_Backup);
+}
 
 void gtkWarningCancel_clicked(GtkWidget *widget, gpointer data, GtkWindow *window) {
-    gtk_widget_set_sensitive(gtkWindow, TRUE);
+    gtk_widget_set_sensitive(gtkWindowStarter, TRUE);
     gtk_window_close(window);
-    // GtkListStore  *store;
-    // GtkTreeIter    iter;
-    
-
-    // store = gtk_list_store_new (NUM_COLS_INTERFACES,G_TYPE_INT, G_TYPE_STRING , G_TYPE_INT, G_TYPE_INT,G_TYPE_INT ,G_TYPE_INT);
-    // gtk_list_store_append (store, &iter);
-    // gtk_list_store_set (store, &iter,
-    //             COL_INDEX, 19,
-    //             COL_TYPE, "ifa_name",
-    //             COL_TX_PACKETS, 454,
-    //             COL_RX_PACKETS, 546,
-    //             COL_TX_BYTES, 58465,
-    //             COL_RX_BYTES, 546,
-    //             -1);
-            
-     
 
 }
 void gtkErrorOk_clicked(GtkWidget *widget, gpointer data, GtkWidget *window) {
     gtk_window_close (window);
-    gtk_widget_set_sensitive(gtkWindow, TRUE);
+    gtk_widget_set_sensitive(gtkWindowStarter, TRUE);
+}
+
+void gtkWarningErrorQuit_clicked(GtkWidget *widget, gpointer data){
+    gtk_window_close(widget);
+    gtk_widget_set_sensitive(gtkWindowStarter, TRUE);
+    
 }
 
 void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
@@ -247,8 +253,8 @@ void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
     GObject *gtkWarningCancel;
     GError *error = NULL;
     
-    gtk_widget_set_sensitive(gtkWindow, FALSE);
-    if (selected_type == NULL){
+    gtk_widget_set_sensitive(gtkWindowStarter, FALSE);
+    if (selected_interface == NULL){
         errorBuilder = gtk_builder_new ();
         if (gtk_builder_add_from_file (errorBuilder, "error_interface.ui", &error) == 0){
             g_printerr ("Error loading file: %s\n", error->message);
@@ -258,6 +264,7 @@ void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
         gtkErrorInterface = gtk_builder_get_object (errorBuilder, "gtkErrorInterface");
         gtkErrorOk = gtk_builder_get_object (errorBuilder, "gtkErrorOk");
         g_signal_connect (gtkErrorOk, "clicked", gtkErrorOk_clicked, gtkErrorInterface);
+        g_signal_connect (gtkErrorInterface, "destroy", gtkWarningErrorQuit_clicked, NULL);
 
     } else {
         warningBuilder = gtk_builder_new ();
@@ -270,11 +277,9 @@ void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
         gtkWarningBackup = gtk_builder_get_object (warningBuilder, "gtkWarningBackup");
         gtkWarningContinue = gtk_builder_get_object (warningBuilder, "gtkWarningContinue");
         gtkWarningCancel = gtk_builder_get_object (warningBuilder, "gtkWarningCancel");
-        g_signal_connect (gtkWarningBackup, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+        g_signal_connect (gtkWarningBackup, "destroy", gtkWarningErrorQuit_clicked, NULL);
         g_signal_connect (gtkWarningContinue, "clicked", gtkWarningContinue_clicked, gtkWarningBackup);
         g_signal_connect (gtkWarningCancel, "clicked", gtkWarningCancel_clicked, gtkWarningBackup);
-        
-        gtk_main();
 
     }
 
@@ -370,22 +375,10 @@ void gtkToolBarRestore_clicked(GtkWidget *widget, gpointer data, GtkWindow *wind
     gtk_widget_destroy (dialog);
 }
 
-void gtkListStoreUpdate_clicked(GtkWidget *widget, gpointer data){
-
-}
 
 void gtkToolBarQuit_clicked(GtkWidget *widget, gpointer data){
-    for(int i = 0; i<5; i++){
-    gtk_list_store_append (store, &iter);
-            gtk_list_store_set (store, &iter,
-                        COL_INDEX, 9,
-                        COL_TYPE, "ifa->ifa_name",
-                        COL_TX_PACKETS, 64684,
-                        COL_RX_PACKETS, 8646854,
-                        COL_TX_BYTES, 6846,
-                        COL_RX_BYTES, 68465,
-                        -1);
-    }
+    
+    gtk_main_quit();
 }
 int fileexists(const char * filename){
     /* try to open file to read */
@@ -407,12 +400,44 @@ int main (int   argc, char *argv[]){
     GObject *gtkToolBarSelect;
     GObject *gtkToolBarBackup;
     GObject *gtkToolBarRestore;
+    GObject *gtkToolBarDefault;
     GObject *gtkToolBarQuit;
     GObject *gtkListBox;
     GObject *gtkLabelLogo;
     GObject *gtkGrid;
     GError *error = NULL;
-   
+    FILE *fp;
+    FILE *output;
+    char *filename = "/home/.default.rules";
+    char *save_default = "iptables-save";
+    char result[8192] = "";
+    char buffer[128];
+
+    if (fileexists("/home/.default.rules"))
+        printf("file exits\n");
+    else{
+        printf("file doesn't exits\n");
+        output = popen(save_default,"r");
+        if (!output) {
+            return "popen failed!";
+        }
+
+        // read till end of process:
+        while (!feof(output)) {
+
+            // use buffer to read and add to result
+            if (fgets(buffer, 128, output) != NULL){
+                strcat(result, buffer);
+            }
+        }
+        fclose(output);
+        // printf("%s", result);
+        fp = fopen(filename, "w");
+        fprintf(fp, result);
+        fclose(fp);
+        
+        
+    }
 
 
     gtk_init (&argc, &argv);
@@ -427,35 +452,32 @@ int main (int   argc, char *argv[]){
     }
 
     /* Connect signal handlers to the constructed widgets. */
-    gtkWindow = gtk_builder_get_object (builder, "starter");
+    gtkWindowStarter = gtk_builder_get_object (builder, "starter");
     gtkGrid =  gtk_builder_get_object(builder, "gtkGrid");
     gtkToolBarSelect = gtk_builder_get_object(builder, "gtkToolBarSelect");
     gtkToolBarBackup = gtk_builder_get_object(builder, "gtkToolBarBackup");
     gtkToolBarRestore = gtk_builder_get_object(builder, "gtkToolBarRestore");
     gtkToolBarQuit = gtk_builder_get_object(builder, "gtkToolBarQuit");
+    gtkToolBarDefault = gtk_builder_get_object(builder, "gtkToolBarDefault");
     view = create_view_and_model ();
-    // gtk_container_add (GTK_CONTAINER (gtkGrid), view);
+    
     gtk_grid_attach ((GtkGrid *)gtkGrid, view, 0, 3, 2, 1);
 
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view));
 
     gtk_tree_selection_set_select_function(selection, view_selection_func, NULL, NULL);
     
-    g_signal_connect (gtkWindow, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+    g_signal_connect (gtkWindowStarter, "destroy", G_CALLBACK (gtk_main_quit), NULL);
     g_signal_connect (gtkToolBarSelect, "clicked", gtkToolBarSelect_clicked, NULL);
-    g_signal_connect (gtkToolBarBackup, "clicked", gtkToolBarBackup_clicked, gtkWindow);
-    g_signal_connect (gtkToolBarRestore, "clicked", gtkToolBarRestore_clicked, gtkWindow);
-    // g_signal_connect (gtkToolBarQuit, "clicked", gtkToolBarQuit_clicked, NULL);
-    // g_signal_connect (store, "row-inserted", gtkListStoreUpdate_clicked, NULL);
-    gtk_widget_show_all (gtkWindow);
+    g_signal_connect (gtkToolBarBackup, "clicked", gtkToolBarBackup_clicked, gtkWindowStarter);
+    g_signal_connect (gtkToolBarRestore, "clicked", gtkToolBarRestore_clicked, gtkWindowStarter);
+    g_signal_connect (gtkToolBarQuit, "clicked", gtkToolBarQuit_clicked, NULL);
+    g_signal_connect (gtkToolBarDefault, "clicked", gtkToolBarDefault_clicked, NULL);
     
-
     
-
+    
+    gtk_widget_show_all (gtkWindowStarter);
     gtk_main ();
-            
-        
-    // printf("\n\n\n\n\n\n\n\nHellow\n\n");
     
     return 0;
 }
