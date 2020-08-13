@@ -399,9 +399,6 @@ int main (int   argc, char *argv[]){
     GObject *gtkLabelLogo;
     GObject *gtkGrid;
     GError *error = NULL;
-   
-    gdk_threads_init ();
-    gdk_threads_enter ();
 
     gtk_init (&argc, &argv);
     argc = argc;
@@ -439,8 +436,6 @@ int main (int   argc, char *argv[]){
     
     gtk_widget_show_all (gtkWindowStarter);
     gtk_main ();
-            
-    gdk_threads_leave ();
     
     return 0;
 }

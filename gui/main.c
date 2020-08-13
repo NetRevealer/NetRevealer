@@ -38,6 +38,7 @@ enum AppUsage_Cols {
     COL_AU_F_TOTALLEN,
     COL_AU_B_NPACK,
     COL_AU_B_TOTALLEN,
+    COL_AU_COLOR,
     NUM_AU_COLS
 };
 
@@ -101,6 +102,7 @@ enum{
     COL_B_MAXWIN,
     COL_B_MINWIN,
     COL_B_MEANWIN,
+    COL_COLOR,
     NUM_COLS
 };
 
@@ -126,20 +128,31 @@ GObject *gtkToolBarStop;
 GObject *gtkToolBarRestart;
 GObject *gtkToolBarStop;
 GObject *gtkToolBarBlock;
+GObject *gtkToolBarUnblock;
+GObject *gtkToolBarUnblockAll;
 GObject *gtkToolBarSave;
+// GObject *gtkToolBarChangeNet;
 GObject *gtkToolBarClear;
 GObject *gtkToolBarQuitMain;
 GObject *gtkWindowMain;
+GObject *gtkToolBarBackupMain;
+GObject *gtkToolBarRestoreMain;
+GObject *gtkToolBarDefaultMain;
 
 int col_index = 0;
 int app_index = 0;
 gboolean scan_stoped = 1;
 
+// Youtube, Twitch, Instagram, Googlemeet, Skype, Anghami, Others.
+char *COLORS[7] = {"#ff9191","#b0ffff","#ffff99","c6c6c6","#3936ff","#b4ffa3","#ffffff"};
 
 
 
 pthread_t ptid_scan;
 pthread_t ptid_insretProtoIP;
+
+void gtkToolBarRestore_clicked(GtkWidget *widget, gpointer data, GtkWindow *window);
+void gtkToolBarBackup_clicked(GtkWidget *widget, gpointer data, GtkWindow *window);
 
 void gtkStoreAppend(gchar *data){
     gdk_threads_init ();
@@ -267,6 +280,20 @@ void gtkStoreAppend(gchar *data){
             COL_B_MINWIN, B_MINWIN,
             COL_B_MEANWIN, B_MEANWIN,
             -1);
+    // Youtube, Twitch, Instagram, Googlemeet, Skype, Anghami, Others.
+    if (strcmp(APP, "Youtube") == 0)
+        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[0],-1);
+    else if (strcmp(APP, "Twitch") == 0)
+        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[1],-1);
+    else if (strcmp(APP, "Instagram") == 0)
+        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[2],-1);
+    else if (strcmp(APP, "Googlemeet") == 0)
+        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[3],-1);
+    else if (strcmp(APP, "Skype") == 0)
+        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[4],-1);
+    else if (strcmp(APP, "Anghami") == 0)
+        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[5],-1);
+
     insert(APP,FLOWID);
     
     adj = gtk_scrolled_window_get_vadjustment (gtkScrolledWindow);
@@ -310,11 +337,11 @@ void gtkStoreAppend(gchar *data){
 
         gtk_list_store_set(store_AppUsage,&iter_AppUsage,
                             2,(NPACK + pack),
-                            3,(TOTALLEN + totlen) / 1024,
+                            3,(TOTALLEN / 1024) + totlen,
                             4,(F_NPACK + fpack),
-                            5,(F_TOTALLEN + ftotlen) / 1024,
+                            5,(F_TOTALLEN / 1024) + ftotlen,
                             6,(B_NPACK + bpack),
-                            7,(B_TOTALLEN + btotlen) 1024,
+                            7,(B_TOTALLEN / 1024) + btotlen,
                             -1);
                           
         done = TRUE;
@@ -338,6 +365,18 @@ void gtkStoreAppend(gchar *data){
             COL_AU_B_NPACK, B_NPACK,
             COL_AU_B_TOTALLEN, B_TOTALLEN / 1024,
             -1);
+            if (strcmp(APP, "Youtube") == 0)
+                gtk_list_store_set (store_AppUsage, &iter_AppUsage, COL_AU_COLOR, COLORS[0],-1);
+            else if (strcmp(APP, "Twitch") == 0)
+                gtk_list_store_set (store_AppUsage, &iter_AppUsage, COL_AU_COLOR, COLORS[1],-1);
+            else if (strcmp(APP, "Instagram") == 0)
+                gtk_list_store_set (store_AppUsage, &iter_AppUsage, COL_AU_COLOR, COLORS[2],-1);
+            else if (strcmp(APP, "Googlemeet") == 0)
+                gtk_list_store_set (store_AppUsage, &iter_AppUsage, COL_AU_COLOR, COLORS[3],-1);
+            else if (strcmp(APP, "Skype") == 0)
+                gtk_list_store_set (store_AppUsage, &iter_AppUsage, COL_AU_COLOR, COLORS[4],-1);
+            else if (strcmp(APP, "Anghami") == 0)
+                gtk_list_store_set (store_AppUsage, &iter_AppUsage, COL_AU_COLOR, COLORS[5],-1);
 
         app_index++;
     }
@@ -406,8 +445,8 @@ static GtkTreeModel * create_and_fill_model_scan (void){
                                     G_TYPE_INT,
                                     G_TYPE_INT,
                                     G_TYPE_INT,
-                                    G_TYPE_DOUBLE);
-
+                                    G_TYPE_DOUBLE,
+                                    G_TYPE_STRING);
     // gtk_list_store_append (store_Capture , &iter_Capture);
     // gtk_list_store_set (store_Capture, &iter_Capture,
     //         COL_FLOWID, "token",
@@ -431,7 +470,9 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 -1,      
                                                 "N°",  
                                                 renderer,
-                                                "text", COL_INDEX_SCAN,
+                                                "text", COL_INDEX_SCAN, 
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     
     renderer = gtk_cell_renderer_text_new ();
@@ -440,6 +481,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "FlowID",  
                                                 renderer,
                                                 "text", COL_FLOWID,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
 
     renderer = gtk_cell_renderer_text_new ();
@@ -448,6 +491,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Type",  
                                                 renderer,
                                                 "text", COL_APP,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
 
     renderer = gtk_cell_renderer_text_new ();
@@ -456,6 +501,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "N° Pkts",  
                                                 renderer,
                                                 "text", COL_NPACK,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
 
     renderer = gtk_cell_renderer_text_new ();
@@ -464,6 +511,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Total len",  
                                                 renderer,
                                                 "text", COL_TOTALLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -471,6 +520,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Max len",  
                                                 renderer,
                                                 "text", COL_MAXLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -478,6 +529,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Min len",  
                                                 renderer,
                                                 "text", COL_MINLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -485,6 +538,10 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Mean len",  
                                                 renderer,
                                                 "text", COL_MEANLEN,
+                                                "cell-background",
+                                                COL_COLOR,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -492,6 +549,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Max IAT",  
                                                 renderer,
                                                 "text", COL_MAXIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -499,6 +558,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Mean IAT",  
                                                 renderer,
                                                 "text", COL_MINIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -506,6 +567,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Total IAT",  
                                                 renderer,
                                                 "text", COL_TOTALIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -513,6 +576,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Mean IAT",  
                                                 renderer,
                                                 "text", COL_MEANIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -520,6 +585,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Duration",  
                                                 renderer,
                                                 "text", COL_DURATION,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -527,6 +594,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Ack count",  
                                                 renderer,
                                                 "text", COL_ACKCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -534,6 +603,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Psh count",  
                                                 renderer,
                                                 "text", COL_PSHCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -541,6 +612,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Rst count",  
                                                 renderer,
                                                 "text", COL_RSTCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -548,6 +621,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Syn count",  
                                                 renderer,
                                                 "text", COL_SYNCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -555,6 +630,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Fin count",  
                                                 renderer,
                                                 "text", COL_FINCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -562,6 +639,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Total win",  
                                                 renderer,
                                                 "text", COL_TOTALWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -576,6 +655,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Min win",  
                                                 renderer,
                                                 "text", COL_MINWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -583,6 +664,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Mean win",  
                                                 renderer,
                                                 "text", COL_MEANWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -590,6 +673,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "N° F Pkts",  
                                                 renderer,
                                                 "text", COL_F_NPACK,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -597,6 +682,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Total len",  
                                                 renderer,
                                                 "text", COL_F_TOTALLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -604,6 +691,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Max len",  
                                                 renderer,
                                                 "text", COL_F_MAXLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -611,6 +700,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Min len",  
                                                 renderer,
                                                 "text", COL_F_MINLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -618,6 +709,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Mean len",  
                                                 renderer,
                                                 "text", COL_F_MEANLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -625,6 +718,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Max IAT",  
                                                 renderer,
                                                 "text", COL_F_MAXIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -632,6 +727,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Mean IAT",  
                                                 renderer,
                                                 "text", COL_F_MINIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -639,6 +736,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Total IAT",  
                                                 renderer,
                                                 "text", COL_F_TOTALIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -646,6 +745,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Mean IAT",  
                                                 renderer,
                                                 "text", COL_F_MEANIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -653,6 +754,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Duration",  
                                                 renderer,
                                                 "text", COL_F_DURATION,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -660,6 +763,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Ack count",  
                                                 renderer,
                                                 "text", COL_F_ACKCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -667,6 +772,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Psh count",  
                                                 renderer,
                                                 "text", COL_F_PSHCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -674,6 +781,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Rest count",  
                                                 renderer,
                                                 "text", COL_F_RSTCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -681,6 +790,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Syn Count",  
                                                 renderer,
                                                 "text", COL_F_SYNCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -688,6 +799,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Fin count",  
                                                 renderer,
                                                 "text", COL_F_FINCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -695,6 +808,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Total win",  
                                                 renderer,
                                                 "text", COL_F_TOTALWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -702,6 +817,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Max win",  
                                                 renderer,
                                                 "text", COL_F_MAXWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -709,6 +826,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Min win",  
                                                 renderer,
                                                 "text", COL_F_MINWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -716,6 +835,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "F Mean win",  
                                                 renderer,
                                                 "text", COL_F_MEANWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -723,6 +844,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "N° B Pkts",  
                                                 renderer,
                                                 "text", COL_B_NPACK,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -730,6 +853,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Total len",  
                                                 renderer,
                                                 "text", COL_B_TOTALLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -737,6 +862,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Max len",  
                                                 renderer,
                                                 "text", COL_B_MAXLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -744,6 +871,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Min len",  
                                                 renderer,
                                                 "text", COL_B_MINLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -751,6 +880,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Mean len",  
                                                 renderer,
                                                 "text", COL_B_MEANLEN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -758,6 +889,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Max IAT",  
                                                 renderer,
                                                 "text", COL_B_MAXIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -765,6 +898,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Mean IAT",  
                                                 renderer,
                                                 "text", COL_B_MINIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -772,6 +907,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Total IAT",  
                                                 renderer,
                                                 "text", COL_B_TOTALIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -779,6 +916,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Mean IAT",  
                                                 renderer,
                                                 "text", COL_B_MEANIAT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -786,6 +925,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Duration",  
                                                 renderer,
                                                 "text", COL_B_DURATION,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -793,6 +934,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Ack count",  
                                                 renderer,
                                                 "text", COL_B_ACKCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -800,6 +943,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Psh count",  
                                                 renderer,
                                                 "text", COL_B_PSHCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -807,6 +952,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Syn count",  
                                                 renderer,
                                                 "text", COL_B_SYNCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -814,6 +961,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Fin count",  
                                                 renderer,
                                                 "text", COL_B_FINCOUNT,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -821,6 +970,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Total win",  
                                                 renderer,
                                                 "text", COL_B_TOTALWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -828,6 +979,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Max win",  
                                                 renderer,
                                                 "text", COL_B_MAXWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -835,6 +988,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B min win",  
                                                 renderer,
                                                 "text", COL_B_MINWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -842,8 +997,10 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "B Mean win",  
                                                 renderer,
                                                 "text", COL_B_MEANWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
-
+    
 
     model_Capture = create_and_fill_model_scan ();
 
@@ -871,7 +1028,8 @@ static GtkTreeModel * create_and_fill_model_app (void){
                                     G_TYPE_INT,
                                     G_TYPE_INT,
                                     G_TYPE_INT,
-                                    G_TYPE_INT);
+                                    G_TYPE_INT,
+                                    G_TYPE_STRING);
 
     return GTK_TREE_MODEL (store_AppUsage);
 };
@@ -890,6 +1048,8 @@ static GtkWidget * create_view_and_model_app (void){
                                                 "N°",  
                                                 renderer,
                                                 "text", COL_AU_INDEX_APP,
+                                                "cell-background",
+                                                COL_AU_COLOR,
                                                 NULL);
     
     renderer = gtk_cell_renderer_text_new ();
@@ -898,6 +1058,8 @@ static GtkWidget * create_view_and_model_app (void){
                                                 "Application",  
                                                 renderer,
                                                 "text", COL_AU_APP,
+                                                "cell-background",
+                                                COL_AU_COLOR,
                                                 NULL);
 
     renderer = gtk_cell_renderer_text_new ();
@@ -906,6 +1068,8 @@ static GtkWidget * create_view_and_model_app (void){
                                                 "Packs",  
                                                 renderer,
                                                 "text", COL_AU_NPACK,
+                                                "cell-background",
+                                                COL_AU_COLOR,
                                                 NULL);
 
     renderer = gtk_cell_renderer_text_new ();
@@ -914,6 +1078,8 @@ static GtkWidget * create_view_and_model_app (void){
                                                 "Traffic size (KB)",  
                                                 renderer,
                                                 "text", COL_AU_TOTALLEN,
+                                                "cell-background",
+                                                COL_AU_COLOR,
                                                 NULL);
 
     renderer = gtk_cell_renderer_text_new ();
@@ -922,6 +1088,8 @@ static GtkWidget * create_view_and_model_app (void){
                                                 "F_packs",  
                                                 renderer,
                                                 "text", COL_AU_F_NPACK,
+                                                "cell-background",
+                                                COL_AU_COLOR,
                                                 NULL);
 
     renderer = gtk_cell_renderer_text_new ();
@@ -930,6 +1098,8 @@ static GtkWidget * create_view_and_model_app (void){
                                                 "Upload KB",  
                                                 renderer,
                                                 "text", COL_AU_F_TOTALLEN,
+                                                "cell-background",
+                                                COL_AU_COLOR,
                                                 NULL);
 
     renderer = gtk_cell_renderer_text_new ();
@@ -938,6 +1108,8 @@ static GtkWidget * create_view_and_model_app (void){
                                                 "B_packs",  
                                                 renderer,
                                                 "text", COL_AU_B_NPACK,
+                                                "cell-background",
+                                                COL_AU_COLOR,
                                                 NULL);
 
     renderer = gtk_cell_renderer_text_new ();
@@ -946,6 +1118,8 @@ static GtkWidget * create_view_and_model_app (void){
                                                 "Download KB",  
                                                 renderer,
                                                 "text", COL_AU_B_TOTALLEN,
+                                                "cell-background",
+                                                COL_AU_COLOR,
                                                 NULL);                                                                                                                                                                                
 
     model_AppUsage = create_and_fill_model_app();
@@ -965,6 +1139,14 @@ static GtkWidget * create_view_and_model_app (void){
 
     return view;
 };
+
+void gtkToolBarChangeNet_clicked(GtkWidget *widget, gpointer data ){
+    // gtk_window_close(gtkWindowMain);
+    // starter(argcm, argvm);
+    
+    
+
+}
 
 void gtkToolBarStart_clicked(GtkWidget *widget, gpointer data) {
     // gtk_list_store_append (store_Capture , &iter_Capture);
@@ -987,7 +1169,7 @@ void gtkToolBarStop_clicked(GtkWidget *widget, gpointer data) {
     scan_stoped = 1;
     pthread_cancel(ptid_scan);
 
-    check_ipsets();
+    // check_ipsets();
 }
 
 void gtkToolBarRestart_clicked(GtkWidget *widget, gpointer data) {
@@ -1004,12 +1186,45 @@ void gtkToolBarRestart_clicked(GtkWidget *widget, gpointer data) {
 }
 
 void gtkButtonBlockApp_clicked(GtkWidget *widget, gpointer data) {
+    if (currAppToBlock == NULL)
+        return;
+
+    
     for (int i = 0; i < 7; i++){
         if (AppsToBlock[i] == NULL){
             AppsToBlock[i] = currAppToBlock;
+            break;
         }
     }
     block_App_init(currAppToBlock);
+    gtk_window_close(widget);
+    gtk_widget_set_sensitive(gtkWindowMain, TRUE);
+}
+
+void gtkButtonUnblockApp_clicked(GtkWidget *widget, gpointer data) {
+    if (currAppToUnblock == NULL)
+        return;
+    
+    
+    for (int i = 0 ; i < 7; i++){
+        if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], currAppToUnblock) ==0 ){
+            int index = mapper(AppsToBlock[i]);
+            AppsToBlock[i] = NULL;
+            currAppToUnblock = NULL;
+            IpProtoSet *set = APP_IPs[index];
+            for (int j = 0 ; j < set->size; j++){
+                char unblockAppCMD[512] = "iptables -D INPUT -s ";
+                char * copy = malloc(strlen(set->ipset[j]) + 1); 
+                strcpy(copy, set->ipset[j]);
+                strtok(copy, "-");
+                strcat(unblockAppCMD, strtok(NULL, "-"));
+                strcat(unblockAppCMD, "/8 -j DROP");
+                system(unblockAppCMD);
+                g_print("unblocked ===> [%s]\n", unblockAppCMD);
+            }
+            break;
+        }
+    }
     gtk_window_close(widget);
     gtk_widget_set_sensitive(gtkWindowMain, TRUE);
 }
@@ -1025,11 +1240,71 @@ void gtkErrorOkMain_clicked(GtkWidget *widget, gpointer data, GtkWidget *window)
     gtk_widget_set_sensitive(gtkWindowMain, TRUE);
 }
 
-comboBox_on_changed (GtkComboBox *widget, gpointer   user_data){
+comboBoxBlock_on_changed (GtkComboBox *widget, gpointer   user_data){
     currAppToBlock = gtk_combo_box_text_get_active_text (widget);
 }
 
+comboBoxUnblock_on_changed (GtkComboBox *widget, gpointer   user_data){
+    currAppToUnblock = gtk_combo_box_text_get_active_text (widget);
+}
 
+void gtkToolBarUnblockAll_clicked(GtkWidget *widget, gpointer data) {
+    
+    for (int i = 0 ; i < 7; i++){
+        if (AppsToBlock[i] != NULL){
+            g_print("\n%s\n\n", AppsToBlock[i]);
+            int index = mapper(AppsToBlock[i]);
+            AppsToBlock[i] = NULL;
+            currAppToBlock = NULL;
+            IpProtoSet *set = APP_IPs[index];
+            for (int j = 0 ; j < set->size; j++){
+                char unblockAppCMD[512] = "iptables -D INPUT -s ";
+                char * copy = malloc(strlen(set->ipset[j]) + 1); 
+                strcpy(copy, set->ipset[j]);
+                strtok(copy, "-");
+                strcat(unblockAppCMD, strtok(NULL, "-"));
+                strcat(unblockAppCMD, "/8 -j DROP");
+                system(unblockAppCMD);
+                g_print("unblocked ===> [%s]\n", unblockAppCMD);
+            }
+        }
+    }
+
+}
+void gtkToolBarUnblock_clicked(GtkWidget *widget, gpointer data) {
+    GtkBuilder *unblockAppBuilder;
+    GtkWidget *gtkUnblockApp;
+    GObject *gtkButtonUnblockApp;
+    GObject *gtkButtonCancelUnblock;
+    GtkComboBoxText *gtkComboBoxUnblock;
+    GError *error = NULL;
+    
+    currAppToUnblock = NULL;
+    
+    gtk_widget_set_sensitive(gtkWindowMain, FALSE);
+    unblockAppBuilder = gtk_builder_new ();
+    if (gtk_builder_add_from_file (unblockAppBuilder, "unblock_app.ui", &error) == 0){
+        g_printerr ("Error loading file: %s\n", error->message);
+        g_clear_error (&error);
+        return 1;
+    }
+    gtkUnblockApp = gtk_builder_get_object (unblockAppBuilder, "gtkUnblockApp");
+    gtkComboBoxUnblock = gtk_builder_get_object (unblockAppBuilder, "gtkComboBoxUnblock");
+    gtkButtonUnblockApp = gtk_builder_get_object (unblockAppBuilder, "gtkButtonUnblockApp");
+    gtkButtonCancelUnblock = gtk_builder_get_object (unblockAppBuilder, "gtkButtonCancelUnblock");
+    
+    g_signal_connect (gtkButtonUnblockApp, "clicked", gtkButtonUnblockApp_clicked, NULL);
+    g_signal_connect (gtkButtonCancelUnblock, "clicked", gtkWarningErrorQuitMain_clicked, NULL);
+    g_signal_connect (gtkUnblockApp, "destroy", gtkWarningErrorQuitMain_clicked, NULL);
+    g_signal_connect (gtkComboBoxUnblock, "changed", G_CALLBACK (comboBoxUnblock_on_changed), NULL);
+    for (int i = 0; i < 7; i++){
+        if (AppsToBlock[i] != NULL){
+            gtk_combo_box_text_append_text(gtkComboBoxUnblock, AppsToBlock[i]);
+        }
+            
+    }
+    
+}
 void gtkToolBarBlock_clicked(GtkWidget *widget, gpointer data) {
     GtkBuilder *blockAppBuilder;
     GtkWidget *gtkBlockApp;
@@ -1056,7 +1331,7 @@ void gtkToolBarBlock_clicked(GtkWidget *widget, gpointer data) {
     g_signal_connect (gtkButtonBlockApp, "clicked", gtkButtonBlockApp_clicked, NULL);
     g_signal_connect (gtkButtonCancelBlock, "clicked", gtkWarningErrorQuitMain_clicked, NULL);
     g_signal_connect (gtkBlockApp, "destroy", gtkWarningErrorQuitMain_clicked, NULL);
-    g_signal_connect (gtkComboBoxBlock, "changed", G_CALLBACK (comboBox_on_changed), NULL);
+    g_signal_connect (gtkComboBoxBlock, "changed", G_CALLBACK (comboBoxBlock_on_changed), NULL);
     if (youtube.size > 0){
         for (int i = 0; i < 7; i++){
             if (AppsToBlock[i] != NULL && strcmp(AppsToBlock[i], "Youtube") == 0){
@@ -1430,6 +1705,8 @@ int start (int   argc, char *argv[]){
     GObject *gtkListBox;
     GObject *gtkLabelLogo;
     GError *error = NULL;
+    // gdk_threads_init ();
+    // gdk_threads_enter ();
 
     init_AppIps();
 
@@ -1449,9 +1726,15 @@ int start (int   argc, char *argv[]){
     gtkToolBarRestart = gtk_builder_get_object(builder, "gtkToolBarRestart");
     gtkToolBarStop = gtk_builder_get_object(builder, "gtkToolBarStop");
     gtkToolBarBlock = gtk_builder_get_object(builder, "gtkToolBarBlock");
+    gtkToolBarUnblock = gtk_builder_get_object(builder, "gtkToolBarUnblock");
+    gtkToolBarUnblockAll = gtk_builder_get_object(builder, "gtkToolBarUnblockAll");
     gtkToolBarSave = gtk_builder_get_object(builder, "gtkToolBarSave");
     gtkToolBarClear = gtk_builder_get_object(builder, "gtkToolBarClear");
     gtkToolBarQuitMain = gtk_builder_get_object(builder, "gtkToolBarQuitMain");
+    // gtkToolBarChangeNet = gtk_builder_get_object(builder, "gtkToolBarChangeNet");
+    gtkToolBarBackupMain =  gtk_builder_get_object(builder, "gtkToolBarBackupMain");
+    gtkToolBarRestoreMain =  gtk_builder_get_object(builder, "gtkToolBarRestoreMain");
+    gtkToolBarDefaultMain =  gtk_builder_get_object(builder, "gtkToolBarDefaultMain");
 
 
     gtkScrolledWindow = gtk_builder_get_object(builder,"gtkScrolledWindow");
@@ -1474,10 +1757,16 @@ int start (int   argc, char *argv[]){
     g_signal_connect (gtkToolBarStop, "clicked", gtkToolBarStop_clicked, NULL);
     g_signal_connect (gtkToolBarRestart, "clicked", gtkToolBarRestart_clicked, NULL);
     g_signal_connect (gtkToolBarBlock, "clicked", gtkToolBarBlock_clicked, NULL);
+    g_signal_connect (gtkToolBarUnblockAll, "clicked", gtkToolBarUnblockAll_clicked, NULL);
+    g_signal_connect (gtkToolBarUnblock, "clicked", gtkToolBarUnblock_clicked, NULL);
     g_signal_connect (gtkToolBarSave, "clicked", gtkToolBarSave_clicked, gtkWindowMain);
     g_signal_connect (gtkToolBarClear, "clicked", gtkToolBarClear_clicked, NULL);
     g_signal_connect (gtkToolBarQuitMain, "clicked", G_CALLBACK (gtk_main_quit), NULL);
     g_signal_connect (gtkWindowMain, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+    g_signal_connect (gtkToolBarBackupMain, "clicked", gtkToolBarBackup_clicked, NULL);
+    g_signal_connect (gtkToolBarRestoreMain, "clicked", gtkToolBarRestore_clicked, NULL);
+    // g_signal_connect (gtkToolBarChangeNet, "clicked", gtkToolBarChangeNet_clicked, NULL);
+    // g_signal_connect (gtkToolBarDefaultMain, "clicked", , NULL);
 
     
 
@@ -1485,6 +1774,7 @@ int start (int   argc, char *argv[]){
 
     
     gtk_main ();
+    // gdk_threads_leave ();
 
     return 0;
 }

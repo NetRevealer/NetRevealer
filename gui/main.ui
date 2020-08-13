@@ -82,6 +82,34 @@
               </packing>
             </child>
             <child>
+              <object class="GtkToolButton" id="gtkToolBarUnblockAll">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Unblock all</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">emblem-default</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="gtkToolBarUnblock">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Unblock</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">dialog-ok</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkToolButton" id="gtkToolBarSave">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
@@ -110,6 +138,48 @@
               </packing>
             </child>
             <child>
+              <object class="GtkToolButton" id="gtkToolBarBackupMain">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Backup</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">document-save</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="gtkToolBarRestoreMain">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Restore</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">document-open-recent</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="gtkToolBarDefaultMain">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Default</property>
+                <property name="use_underline">True</property>
+                <property name="icon_name">document-properties</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkToolButton" id="gtkToolBarQuitMain">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
@@ -127,6 +197,7 @@
           <packing>
             <property name="left_attach">0</property>
             <property name="top_attach">0</property>
+            <property name="width">3</property>
           </packing>
         </child>
         <child>
@@ -206,6 +277,50 @@
           <packing>
             <property name="left_attach">0</property>
             <property name="top_attach">1</property>
+            <property name="width">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="gtkLabelInterface">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="valign">center</property>
+            <property name="hexpand">True</property>
+            <property name="label" translatable="yes">Selected interface: </property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkImage">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="valign">center</property>
+            <property name="margin_right">5</property>
+            <property name="hexpand">False</property>
+            <property name="icon_name">utilities-system-monitor</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">end</property>
+            <property name="valign">center</property>
+            <property name="hexpand">True</property>
+            <property name="label" translatable="yes">Net revealer copyrights@ 2020/2021</property>
+          </object>
+          <packing>
+            <property name="left_attach">2</property>
+            <property name="top_attach">2</property>
           </packing>
         </child>
       </object>

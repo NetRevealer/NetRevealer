@@ -19,6 +19,7 @@ IpProtoSet others;
 
 char *AppsToBlock[7];
 char *currAppToBlock;
+char *currAppToUnblock;
 
 //#########################
 void init_AppIps(){
