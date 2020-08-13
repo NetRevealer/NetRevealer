@@ -51,6 +51,7 @@ PyObject* extractFeatures_fromFlow;
 PyObject* pargs;
 PyObject *result;
 
+
 char host[256];
 struct hostent *host_entry;
 char hostIP[18];
@@ -418,9 +419,14 @@ char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pac
 
 
 
-int scan(){
+int scan(char *dev){
     // int argc = 3;
-    char dev[] = "wlp6s0";		/* Device to sniff on */
+    
+    if (dev == NULL){
+        printf("interface is NULL \n");
+        return;
+    }
+
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t* liveCapture;
     struct bpf_program fp;      /* hold compiled program     */

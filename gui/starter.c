@@ -39,7 +39,7 @@ enum interface_cols{
 
 int argc;
 char *argv[];
-gchar *selected_type;
+gchar *selected_interface;
 gboolean network_rules_backup = 1;
 GObject *gtkWindowStarter;
 GtkTreeSelection *selection;
@@ -183,7 +183,7 @@ gboolean view_selection_func (GtkTreeSelection *selection,
         gtk_tree_model_get(model, &iter, COL_TYPE, &type, -1);
 
         if (!path_currently_selected){
-            selected_type = type;
+            selected_interface = type;
             g_print ("%s is going to be selected.\n", type);
         }
         else{
@@ -211,7 +211,7 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
     // mainWindow = gtk_builder_get_object (gtkmainWindow, "mainWindow");
     gtk_window_close(window);
     gtk_window_close(gtkWindowStarter);
-    start(argc, argv);
+    start(argc, argv, selected_interface);
     gtk_main();
     gtk_main_quit();
     
@@ -219,6 +219,12 @@ void gtkWarningContinue_clicked(GtkWidget *widget, gpointer data, GtkWindow *win
     
 
 
+}
+void gtkToolBarDefault_clicked(GtkWidget *widget, gpointer data){
+    char restore_Backup[256] = "iptables-restore < ";
+    char *filename = "/home/.default.rules";
+    strcat(restore_Backup, filename);
+    system(restore_Backup);
 }
 
 void gtkWarningCancel_clicked(GtkWidget *widget, gpointer data, GtkWindow *window) {
@@ -248,7 +254,7 @@ void gtkToolBarSelect_clicked(GtkWidget *widget, gpointer data) {
     GError *error = NULL;
     
     gtk_widget_set_sensitive(gtkWindowStarter, FALSE);
-    if (selected_type == NULL){
+    if (selected_interface == NULL){
         errorBuilder = gtk_builder_new ();
         if (gtk_builder_add_from_file (errorBuilder, "error_interface.ui", &error) == 0){
             g_printerr ("Error loading file: %s\n", error->message);
@@ -394,11 +400,45 @@ int main (int   argc, char *argv[]){
     GObject *gtkToolBarSelect;
     GObject *gtkToolBarBackup;
     GObject *gtkToolBarRestore;
+    GObject *gtkToolBarDefault;
     GObject *gtkToolBarQuit;
     GObject *gtkListBox;
     GObject *gtkLabelLogo;
     GObject *gtkGrid;
     GError *error = NULL;
+    FILE *fp;
+    FILE *output;
+    char *filename = "/home/.default.rules";
+    char *save_default = "iptables-save";
+    char result[8192] = "";
+    char buffer[128];
+
+    if (fileexists("/home/.default.rules"))
+        printf("file exits\n");
+    else{
+        printf("file doesn't exits\n");
+        output = popen(save_default,"r");
+        if (!output) {
+            return "popen failed!";
+        }
+
+        // read till end of process:
+        while (!feof(output)) {
+
+            // use buffer to read and add to result
+            if (fgets(buffer, 128, output) != NULL){
+                strcat(result, buffer);
+            }
+        }
+        fclose(output);
+        // printf("%s", result);
+        fp = fopen(filename, "w");
+        fprintf(fp, result);
+        fclose(fp);
+        
+        
+    }
+
 
     gtk_init (&argc, &argv);
     argc = argc;
@@ -418,6 +458,7 @@ int main (int   argc, char *argv[]){
     gtkToolBarBackup = gtk_builder_get_object(builder, "gtkToolBarBackup");
     gtkToolBarRestore = gtk_builder_get_object(builder, "gtkToolBarRestore");
     gtkToolBarQuit = gtk_builder_get_object(builder, "gtkToolBarQuit");
+    gtkToolBarDefault = gtk_builder_get_object(builder, "gtkToolBarDefault");
     view = create_view_and_model ();
     
     gtk_grid_attach ((GtkGrid *)gtkGrid, view, 0, 3, 2, 1);
@@ -431,6 +472,7 @@ int main (int   argc, char *argv[]){
     g_signal_connect (gtkToolBarBackup, "clicked", gtkToolBarBackup_clicked, gtkWindowStarter);
     g_signal_connect (gtkToolBarRestore, "clicked", gtkToolBarRestore_clicked, gtkWindowStarter);
     g_signal_connect (gtkToolBarQuit, "clicked", gtkToolBarQuit_clicked, NULL);
+    g_signal_connect (gtkToolBarDefault, "clicked", gtkToolBarDefault_clicked, NULL);
     
     
     

@@ -138,13 +138,15 @@ GObject *gtkWindowMain;
 GObject *gtkToolBarBackupMain;
 GObject *gtkToolBarRestoreMain;
 GObject *gtkToolBarDefaultMain;
+GObject *gtkLabelInterface;
 
 int col_index = 0;
 int app_index = 0;
 gboolean scan_stoped = 1;
 
 // Youtube, Twitch, Instagram, Googlemeet, Skype, Anghami, Others.
-char *COLORS[7] = {"#ff9191","#b0ffff","#ffff99","c6c6c6","#3936ff","#b4ffa3","#ffffff"};
+char *COLORS[7] = {"#ff9191","#b0ffff","#ffff99","#c6c6c6","#3936ff","#b4ffa3","#ffffff"};
+gchar *devInterface;
 
 
 
@@ -153,6 +155,7 @@ pthread_t ptid_insretProtoIP;
 
 void gtkToolBarRestore_clicked(GtkWidget *widget, gpointer data, GtkWindow *window);
 void gtkToolBarBackup_clicked(GtkWidget *widget, gpointer data, GtkWindow *window);
+void gtkToolBarDefault_clicked(GtkWidget *widget, gpointer data);
 
 void gtkStoreAppend(gchar *data){
     gdk_threads_init ();
@@ -1155,19 +1158,21 @@ void gtkToolBarStart_clicked(GtkWidget *widget, gpointer data) {
     //         COL_APP, "djamel",
     //         COL_NPACK, "999",
     //         -1);
-
     gtk_widget_set_sensitive(widget, FALSE);
-    gtk_widget_set_sensitive(gtkToolBarStop, TRUE);
     scan_stoped = 0;
-    pthread_create(&ptid_scan, NULL, &scan, NULL);
+    pthread_create(&ptid_scan, NULL, &scan, devInterface);
+    sleep(2);
+    gtk_widget_set_sensitive(gtkToolBarStop, TRUE);
+    g_print("start clicked \n");
+    
     
 }
 void gtkToolBarStop_clicked(GtkWidget *widget, gpointer data) {
-    
-    gtk_widget_set_sensitive(widget, FALSE);
-    gtk_widget_set_sensitive(gtkToolBarStart, TRUE);
     scan_stoped = 1;
     pthread_cancel(ptid_scan);
+    gtk_widget_set_sensitive(widget, FALSE);
+    gtk_widget_set_sensitive(gtkToolBarStart, TRUE);
+    g_print("stop clicked \n");
 
     // check_ipsets();
 }
@@ -1695,7 +1700,7 @@ void gtkToolBarClear_clicked(GtkWidget *widget, gpointer data) {
     app_index = 0;
 }
 
-int start (int   argc, char *argv[]){
+int start (int   argc, char *argv[], gchar *dev){
     gchar *text;
     gint i;
     GtkWidget *row;
@@ -1707,7 +1712,7 @@ int start (int   argc, char *argv[]){
     GError *error = NULL;
     // gdk_threads_init ();
     // gdk_threads_enter ();
-
+    devInterface = dev;
     init_AppIps();
 
     gtk_init (&argc, &argv);
@@ -1740,6 +1745,9 @@ int start (int   argc, char *argv[]){
     gtkScrolledWindow = gtk_builder_get_object(builder,"gtkScrolledWindow");
     gtkScrolledWindow2 = gtk_builder_get_object(builder,"gtkScrolledWindow2");
 
+    gtkLabelInterface = gtk_builder_get_object(builder, "gtkLabelInterface");
+    gtk_label_set_text(gtkLabelInterface, devInterface);
+
     
     
     view_Capture =  create_view_and_model_scan ();
@@ -1766,7 +1774,7 @@ int start (int   argc, char *argv[]){
     g_signal_connect (gtkToolBarBackupMain, "clicked", gtkToolBarBackup_clicked, NULL);
     g_signal_connect (gtkToolBarRestoreMain, "clicked", gtkToolBarRestore_clicked, NULL);
     // g_signal_connect (gtkToolBarChangeNet, "clicked", gtkToolBarChangeNet_clicked, NULL);
-    // g_signal_connect (gtkToolBarDefaultMain, "clicked", , NULL);
+    g_signal_connect (gtkToolBarDefaultMain, "clicked", gtkToolBarDefault_clicked, NULL);
 
     
 

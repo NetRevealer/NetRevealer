@@ -3,7 +3,7 @@
 #include <string.h>
 //#########################
 typedef struct IpProtoSets{
-    char ipset[10][20];
+    char ipset[100][20];
     int size;
 } IpProtoSet ;
 
