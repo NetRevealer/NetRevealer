@@ -1,7 +1,10 @@
+# import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 def plot_app_usage(data):
-    print(data)
+    # print(data)
     try:
         packs = []
         labels = []
@@ -19,6 +22,11 @@ def plot_app_usage(data):
         ax1.pie(packs, explode=explode, labels=labels, autopct='%1.1f%%',
             shadow=True, startangle=90)
         ax1.axis('equal')
-        plt.savefig('appusage.png')
+        plt.savefig('.appusage.png')
+        
+        # df = pd.DataFrame({'packs': packs}, index=labels)
+        # plot = df.plot.pie(y='packs', figsize=(5, 5))
+        # fig = plot.get_figure()
+        # fig.savefig("appusage.png")
     except Exception as e:
         print(e)
