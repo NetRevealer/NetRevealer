@@ -246,10 +246,11 @@
                 <property name="can_focus">False</property>
                 <child>
                   <object class="GtkScrolledWindow" id="gtkScrolledWindow2">
+                    <property name="height_request">250</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="hexpand">True</property>
-                    <property name="vexpand">True</property>
+                    <property name="vexpand">False</property>
                     <property name="shadow_type">in</property>
                     <child>
                       <placeholder/>
@@ -261,10 +262,28 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkImage" id="gtkImagePlot">
+                  <object class="GtkScrolledWindow">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="can_focus">True</property>
                     <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                    <property name="shadow_type">in</property>
+                    <child>
+                      <object class="GtkViewport">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="hexpand">True</property>
+                        <property name="vexpand">True</property>
+                        <child>
+                          <object class="GtkImage" id="gtkImagePlot">
+                            <property name="width_request">100</property>
+                            <property name="height_request">80</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>

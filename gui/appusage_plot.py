@@ -7,21 +7,32 @@ def plot_app_usage(data):
     # print(data)
     try:
         packs = []
+        traffic_size = []
         labels = []
 
         data  = data.split(",")[:-1];
         for d in data:
-            labels.append(d.split(":")[0])
-            packs.append(int(d.split(":")[1]))
+            l, p, s = d.split(":")
+            labels.append(l)
+            packs.append(int(p))
+            traffic_size.append(int(s))
         
+        # print(labels)
+        # print(packs)
+        # print(t)
         tem_explode = []  # only "explode" the 2nd slice (i.e. 'Hogs')
         for l in labels:
             tem_explode.append(0.05)
         explode = tuple(tem_explode)
-        fig1, ax1 = plt.subplots()
-        ax1.pie(packs, explode=explode, labels=labels, autopct='%1.1f%%',
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(13,4))
+        ax[0].set_title('Application usage (Number of packets) ')
+        ax[0].pie(packs, explode=explode, labels=labels, autopct='%1.1f%%',
             shadow=True, startangle=90)
-        ax1.axis('equal')
+        ax[0].axis('equal')
+
+        ax[1].bar(labels, traffic_size)
+        ax[1].set_title('Application usage: Traffic size (KB)')
+        ax[1].set_ylabel('Traffic size (KB)')
         plt.savefig('.appusage.png')
         
         # df = pd.DataFrame({'packs': packs}, index=labels)

@@ -197,6 +197,10 @@ void gtkToolBarPlot_clicked(GtkWidget *widget, gpointer data){
             char converted_packs[50]; 
             sprintf(converted_packs, "%d", pack);
             strcat(data_to_plot, converted_packs);
+            strcat(data_to_plot, ":");
+            char converted_traffic_size[50]; 
+            sprintf(converted_traffic_size, "%d", totlen);
+            strcat(data_to_plot, converted_traffic_size);
             strcat(data_to_plot, ",");
         
         
@@ -426,6 +430,10 @@ void gtkStoreAppend(gchar *data){
         char converted_packs[50]; 
         sprintf(converted_packs, "%d", pack);
         strcat(data_to_plot, converted_packs);
+        strcat(data_to_plot, ":");
+        char converted_traffic_size[50]; 
+        sprintf(converted_traffic_size, "%d", totlen);
+        strcat(data_to_plot, converted_traffic_size);
         strcat(data_to_plot, ",");
     
     
@@ -1315,11 +1323,10 @@ void gtkToolBarStop_clicked(GtkWidget *widget, gpointer data) {
 }
 
 void gtkToolBarRestart_clicked(GtkWidget *widget, gpointer data) {
+    // gtk_widget_set_sensitive(gtkToolBarRestart, FALSE);
+    
     gtk_list_store_clear (store_Capture);
     gtk_list_store_clear (store_AppUsage);
-
-    
-
     gtkToolBarStop_clicked(gtkToolBarStop, data);
     col_index = 0;
     app_index = 0;

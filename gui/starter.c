@@ -47,6 +47,7 @@ GtkListStore  *store;
 GtkTreeModel *model;
 GtkTreeIter iter;
 GtkWidget *view;
+GtkLabel *gtkLabelInterfaceStarter;
 
 
 
@@ -184,6 +185,7 @@ gboolean view_selection_func (GtkTreeSelection *selection,
 
         if (!path_currently_selected){
             selected_interface = type;
+            gtk_label_set_text(gtkLabelInterfaceStarter, type);
             g_print ("%s is going to be selected.\n", type);
         }
         else{
@@ -401,6 +403,7 @@ int main (int   argc, char *argv[]){
     GObject *gtkToolBarBackup;
     GObject *gtkToolBarRestore;
     GObject *gtkToolBarDefault;
+    GObject *gtkScrollWindowInterfaces;
     GObject *gtkToolBarQuit;
     GObject *gtkListBox;
     GObject *gtkLabelLogo;
@@ -455,13 +458,15 @@ int main (int   argc, char *argv[]){
     gtkWindowStarter = gtk_builder_get_object (builder, "starter");
     gtkGrid =  gtk_builder_get_object(builder, "gtkGrid");
     gtkToolBarSelect = gtk_builder_get_object(builder, "gtkToolBarSelect");
+    gtkScrollWindowInterfaces = gtk_builder_get_object(builder, "gtkScrollWindowInterfaces");
     gtkToolBarBackup = gtk_builder_get_object(builder, "gtkToolBarBackup");
     gtkToolBarRestore = gtk_builder_get_object(builder, "gtkToolBarRestore");
     gtkToolBarQuit = gtk_builder_get_object(builder, "gtkToolBarQuit");
     gtkToolBarDefault = gtk_builder_get_object(builder, "gtkToolBarDefault");
+    gtkLabelInterfaceStarter = gtk_builder_get_object(builder, "gtkLabelInterfaceStarter");
     view = create_view_and_model ();
     
-    gtk_grid_attach ((GtkGrid *)gtkGrid, view, 0, 3, 2, 1);
+    gtk_grid_attach ((GtkGrid *)gtkGrid, view, 0, 3, 4, 1);
 
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view));
 
