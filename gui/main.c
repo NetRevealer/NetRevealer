@@ -137,12 +137,15 @@ GObject *gtkToolBarSave;
 GObject *gtkToolBarClear;
 GObject *gtkToolBarQuitMain;
 GObject *gtkWindowMain;
+GObject *gtkWindowSettings;
 GObject *gtkToolBarBackupMain;
 GObject *gtkToolBarRestoreMain;
 GObject *gtkToolBarDefaultMain;
 GObject *gtkLabelInterface;
 GObject *gtkImagePlot;
 GObject *gtkToolBarPlot;
+GObject *gtkToolBarSettingsMain;
+GObject *gtkListBoxOptions;
 
 int col_index = 0;
 int app_index = 0;
@@ -153,7 +156,8 @@ char *COLORS[7] = {"#ff9191","#b0ffff","#ffff99","#c6c6c6","#3936ff","#b4ffa3","
 gchar *devInterface;
 
 
-
+gboolean coloringOption = TRUE;
+gboolean coloringOption_Settings = TRUE;
 
 
 
@@ -357,18 +361,23 @@ void gtkStoreAppend(gchar *data){
             COL_B_MEANWIN, B_MEANWIN,
             -1);
     // Youtube, Twitch, Instagram, Googlemeet, Skype, Anghami, Others.
-    if (strcmp(APP, "Youtube") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[0],-1);
-    else if (strcmp(APP, "Twitch") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[1],-1);
-    else if (strcmp(APP, "Instagram") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[2],-1);
-    else if (strcmp(APP, "Googlemeet") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[3],-1);
-    else if (strcmp(APP, "Skype") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[4],-1);
-    else if (strcmp(APP, "Anghami") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[5],-1);
+    if (coloringOption){
+
+        if (strcmp(APP, "Youtube") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[0],-1);
+        else if (strcmp(APP, "Twitch") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[1],-1);
+        else if (strcmp(APP, "Instagram") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[2],-1);
+        else if (strcmp(APP, "Googlemeet") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[3],-1);
+        else if (strcmp(APP, "Skype") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[4],-1);
+        else if (strcmp(APP, "Anghami") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[5],-1);
+
+    }
+    
 
     insert(APP,FLOWID);
     
@@ -650,8 +659,6 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "text", COL_MEANLEN,
                                                 "cell-background",
                                                 COL_COLOR,
-                                                "cell-background",
-                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -665,7 +672,7 @@ static GtkWidget * create_view_and_model_scan (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "Mean IAT",  
+                                                "Min IAT",  
                                                 renderer,
                                                 "text", COL_MINIAT,
                                                 "cell-background",
@@ -758,6 +765,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Max win",  
                                                 renderer,
                                                 "text", COL_MAXWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -834,7 +843,7 @@ static GtkWidget * create_view_and_model_scan (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "F Mean IAT",  
+                                                "F Min IAT",  
                                                 renderer,
                                                 "text", COL_F_MINIAT,
                                                 "cell-background",
@@ -888,7 +897,7 @@ static GtkWidget * create_view_and_model_scan (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "F Rest count",  
+                                                "F Rst count",  
                                                 renderer,
                                                 "text", COL_F_RSTCOUNT,
                                                 "cell-background",
@@ -1005,7 +1014,7 @@ static GtkWidget * create_view_and_model_scan (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "B Mean IAT",  
+                                                "B Min IAT",  
                                                 renderer,
                                                 "text", COL_B_MINIAT,
                                                 "cell-background",
@@ -1119,6 +1128,8 @@ static GtkWidget * create_view_and_model_scan (void){
     for (int i =0; i < 59; i++){
         column = gtk_tree_view_get_column(view, i);
         gtk_tree_view_column_set_sort_column_id(column, i);
+        if (i > 12 || i == 3)
+            gtk_tree_view_column_set_visible (column, FALSE);
     }
 
     /* The tree view has acquired its own reference to the
@@ -1847,6 +1858,105 @@ void gtkToolBarClear_clicked(GtkWidget *widget, gpointer data) {
     app_index = 0;
 }
 
+void gtkSettingsApply_clicked(GtkWidget *widget, gpointer data, GtkWindow *window){
+
+    GtkTreeViewColumn *column;
+    GtkListBoxRow *row;
+    GtkGrid *grid;
+    GtkCheckButton *check;
+
+    coloringOption = coloringOption_Settings;
+
+    for (int i =1; i < 57; i++){
+        row = gtk_list_box_get_row_at_index (gtkListBoxOptions, i);
+        grid = gtk_bin_get_child(GTK_BIN(row));
+        check = gtk_grid_get_child_at (grid, 1, 0);
+        gboolean toggled = gtk_toggle_button_get_active(check);
+        
+        column = gtk_tree_view_get_column(view_Capture, i+2);
+        gtk_tree_view_column_set_visible (column, toggled);
+        
+    }
+
+    gtk_window_close(window);
+    gtk_widget_set_sensitive(gtkWindowMain, TRUE);
+
+}
+
+void gtkSwitch_activate(GtkWidget *widget, gpointer data){
+    coloringOption_Settings = gtk_switch_get_state(widget);
+    gtk_switch_set_active(widget, coloringOption_Settings);
+}
+
+void gtkToggleSelectAll_toggled(GtkWidget *widget, gpointer data){
+    gboolean toggled = gtk_toggle_button_get_active(widget);
+    GtkListBoxRow *row;
+    GtkGrid *grid;
+    GtkCheckButton *check;
+    for (int i =1; i < 57; i++){
+        row = gtk_list_box_get_row_at_index (gtkListBoxOptions, i);
+        grid = gtk_bin_get_child(GTK_BIN(row));
+        check = gtk_grid_get_child_at (grid, 1, 0);
+        gtk_toggle_button_set_active(check, toggled);
+    }
+
+    
+
+}
+
+void gtkToolBarSettingsMain_clicked(GtkWidget *widget, gpointer data) {
+    GtkBuilder *settingsBuilder;
+    GtkWindow *gtkWindowSettings;
+    GObject *gtkSettingsApply;
+    GObject *gtkSettingsCancel;
+    GObject *gtkToggleSelectAll;
+    GObject *gtkSwitch;
+    GError *error = NULL;
+
+
+    settingsBuilder = gtk_builder_new ();
+    if (gtk_builder_add_from_file (settingsBuilder, "settings.ui", &error) == 0){
+        g_printerr ("Error loading file: %s\n", error->message);
+        g_clear_error (&error);
+        return 1;
+    }
+
+    gtkWindowSettings = gtk_builder_get_object (settingsBuilder, "gtkWindowSettings");
+    gtkSettingsApply = gtk_builder_get_object (settingsBuilder, "gtkSettingsApply");
+    gtkSettingsCancel = gtk_builder_get_object (settingsBuilder, "gtkSettingsCancel");
+    gtkSwitch = gtk_builder_get_object (settingsBuilder, "gtkSwitch");
+    gtkListBoxOptions = gtk_builder_get_object (settingsBuilder, "gtkListBoxOptions");
+    gtkToggleSelectAll = gtk_builder_get_object(settingsBuilder, "gtkToggleSelectAll");
+
+
+    g_signal_connect (gtkWindowSettings, "destroy", gtkWarningErrorQuitMain_clicked, NULL);
+    g_signal_connect (gtkSettingsApply, "clicked", gtkSettingsApply_clicked, gtkWindowSettings);
+    g_signal_connect (gtkSettingsCancel, "clicked", gtkWarningErrorQuitMain_clicked, NULL);
+    g_signal_connect (gtkSwitch, "state-set", gtkSwitch_activate, NULL);
+    g_signal_connect (gtkToggleSelectAll, "toggled", gtkToggleSelectAll_toggled, NULL);
+    gtk_switch_set_state(gtkSwitch, coloringOption);
+    gtk_switch_set_active(gtkSwitch, coloringOption);
+
+    GtkTreeViewColumn *column;
+    GtkListBoxRow *row;
+    GtkGrid *grid;
+    GtkCheckButton *check;
+
+    for (int i =3; i < 59; i++){
+        column = gtk_tree_view_get_column(view_Capture, i);
+        gboolean visible = gtk_tree_view_column_get_visible (column);
+        row = gtk_list_box_get_row_at_index (gtkListBoxOptions, i-2);
+        grid = gtk_bin_get_child(GTK_BIN(row));
+        check = gtk_grid_get_child_at (grid, 1, 0);
+        gtk_toggle_button_set_active(check, visible);
+        
+    }
+
+    gtk_widget_show_all(gtkWindowSettings);
+    gtk_widget_set_sensitive(gtkWindowMain, FALSE);
+}
+
+
 int start (int   argc, char *argv[], gchar *dev){
     gchar *text;
     gint i;
@@ -1887,6 +1997,7 @@ int start (int   argc, char *argv[], gchar *dev){
     gtkToolBarBackupMain =  gtk_builder_get_object(builder, "gtkToolBarBackupMain");
     gtkToolBarRestoreMain =  gtk_builder_get_object(builder, "gtkToolBarRestoreMain");
     gtkToolBarDefaultMain =  gtk_builder_get_object(builder, "gtkToolBarDefaultMain");
+    gtkToolBarSettingsMain = gtk_builder_get_object(builder, "gtkToolBarSettingsMain");
     gtkImagePlot = gtk_builder_get_object(builder, "gtkImagePlot");
     gtkToolBarPlot = gtk_builder_get_object(builder, "gtkToolBarPlot");
     
@@ -1895,7 +2006,8 @@ int start (int   argc, char *argv[], gchar *dev){
     gtkScrolledWindow2 = gtk_builder_get_object(builder,"gtkScrolledWindow2");
 
     gtkLabelInterface = gtk_builder_get_object(builder, "gtkLabelInterface");
-    gtk_label_set_text(gtkLabelInterface, devInterface);
+    
+    
     gtk_widget_set_sensitive(gtkToolBarRestart, FALSE);
 
     
@@ -1923,6 +2035,8 @@ int start (int   argc, char *argv[], gchar *dev){
     g_signal_connect (gtkWindowMain, "destroy", G_CALLBACK (gtk_main_quit), NULL);
     g_signal_connect (gtkToolBarBackupMain, "clicked", gtkToolBarBackup_clicked, NULL);
     g_signal_connect (gtkToolBarRestoreMain, "clicked", gtkToolBarRestore_clicked, NULL);
+    g_signal_connect (gtkToolBarSettingsMain, "clicked", gtkToolBarSettingsMain_clicked, NULL);
+
     // g_signal_connect (gtkToolBarChangeNet, "clicked", gtkToolBarChangeNet_clicked, NULL);
     g_signal_connect (gtkToolBarDefaultMain, "clicked", gtkToolBarDefault_clicked, NULL);
     g_signal_connect (gtkToolBarPlot, "clicked", gtkToolBarPlot_clicked, NULL);
