@@ -31,6 +31,7 @@
 #include <netinet/udp.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <gtk/gtk.h>
 
 #include <stdbool.h>
 #include <python3.8/Python.h>
@@ -40,20 +41,22 @@
 #define ETHER_HDRLEN 14
 #endif
 
+gboolean scan_stoped = 1;
+gboolean jacket_stoped = 1;
+pcap_t* liveCapture;
+
 
 u_int16_t handle_ethernet(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet);
 char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet);
 char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet,bool direction);
 char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char*packet,bool direction);
 
-FILE *output_file;
+// FILE *output_file;
+
 PyObject *extractFeatures_fromFlow;
 PyObject *pargs;
-PyObject *result;
-
 PyObject *pargs_plot;
 PyObject *plot_app_usage;
-
 
 char host[256];
 struct hostent *host_entry;
@@ -134,8 +137,10 @@ void update_pkts(struct flow *f, char data[216]){
         // printf("%s", f->pkts);
         if (f->backward_count > 1 && f->forward_count > 1){
             // printf("wow");
+            
             pargs = Py_BuildValue("(s)", f->pkts);
             PyObject *result = PyObject_CallObject(extractFeatures_fromFlow, pargs);
+            // Py_Finalize();
             if (result == NULL){
                 printf("NULL\n");
                 
@@ -173,17 +178,22 @@ void sigintHandler(int sig_num)
     signal(SIGINT, sigintHandler); 
     printf("[*] Exiting live feature collector using Ctrl+C \n");
     printf("[*] Flushing data to the output file \n");
-    fflush(output_file);
-    fclose(output_file);
+    // fflush(output_file);
+    // fclose(output_file);
     exit(0);
 } 
 
 void stop(){
-    exit(0);
+    exit(1);
 }
 
 /* looking at ethernet headers */
 void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
+    // if (scan_stoped){
+    //     jacket_stoped = 1;
+    //     pthread_exit(NULL);
+
+    // }
     u_int16_t type = handle_ethernet(args,pkthdr,packet);
     char pkt[216];
     if(type == ETHERTYPE_IP){
@@ -193,7 +203,7 @@ void Jacket(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* packet){
         sprintf(actualdirection, NULL);
         sprintf(pkt, handle_IP(args,pkthdr,packet));
         searchflow(&head, pkt, actualaddr, actualport);
-        fprintf(output_file,"\n");
+        // fprintf(output_file,"\n");
 
     }else if(type == ETHERTYPE_ARP){
         /* handle arp packet */
@@ -313,11 +323,11 @@ char* handle_IP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pack
         // fprintf(stdout,"%s [hdr len %d] [version %d] [len %d] [off %d]\n", inet_ntoa(iph->ip_dst), hlen,version,len,off);
         
         if (is_forward){
-            fprintf(output_file,"F,%d,%s,%d,",protocol_id,inet_ntoa(iph->ip_dst),len);
+            // fprintf(output_file,"F,%d,%s,%d,",protocol_id,inet_ntoa(iph->ip_dst),len);
             sprintf(pkt, "F,%d,%s,%d,",protocol_id,inet_ntoa(iph->ip_dst),len);
             sprintf(actualaddr, "%d,%s,", protocol_id,inet_ntoa(iph->ip_dst));
         } else{
-            fprintf(output_file,"B,%d,%s,%d,",protocol_id,inet_ntoa(iph->ip_src),len);
+            // fprintf(output_file,"B,%d,%s,%d,",protocol_id,inet_ntoa(iph->ip_src),len);
             sprintf(pkt, "B,%d,%s,%d,",protocol_id,inet_ntoa(iph->ip_src),len);
             sprintf(actualaddr, "%d,%s,", protocol_id,inet_ntoa(iph->ip_src));
         }
@@ -358,24 +368,24 @@ char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pac
     //             (tcp->fin ? 'F' : '*'));
 
     if(is_forward){
-        fprintf(output_file,"%d,%d,", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
+        // fprintf(output_file,"%d,%d,", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
         sprintf(pkt, "%d,%d,", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
         sprintf(actualport, "%d,%d,", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
     } else{
-        fprintf(output_file,"%d,%d,", ntohs(tcp->th_dport), ntohs(tcp->th_sport));
+        // fprintf(output_file,"%d,%d,", ntohs(tcp->th_dport), ntohs(tcp->th_sport));
         sprintf(pkt, "%d,%d,", ntohs(tcp->th_dport), ntohs(tcp->th_sport));
         sprintf(actualport, "%d,%d,", ntohs(tcp->th_dport), ntohs(tcp->th_sport));
     }
-    fprintf(output_file,"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
+    // fprintf(output_file,"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
     sprintf(pkt + strlen(pkt),"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
 
-    fprintf(output_file,"%c%c%c%c%c%c,",
-                (tcp->urg ? 'U' : '*'),
-                (tcp->ack ? 'A' : '*'),
-                (tcp->psh ? 'P' : '*'),
-                (tcp->rst ? 'R' : '*'),
-                (tcp->syn ? 'S' : '*'),
-                (tcp->fin ? 'F' : '*'));
+    // fprintf(output_file,"%c%c%c%c%c%c,",
+    //             (tcp->urg ? 'U' : '*'),
+    //             (tcp->ack ? 'A' : '*'),
+    //             (tcp->psh ? 'P' : '*'),
+    //             (tcp->rst ? 'R' : '*'),
+    //             (tcp->syn ? 'S' : '*'),
+    //             (tcp->fin ? 'F' : '*'));
     sprintf(pkt + strlen(pkt),"%c%c%c%c%c%c,",
                 (tcp->urg ? 'U' : '*'),
                 (tcp->ack ? 'A' : '*'),
@@ -383,9 +393,9 @@ char* handle_TCP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pac
                 (tcp->rst ? 'R' : '*'),
                 (tcp->syn ? 'S' : '*'),
                 (tcp->fin ? 'F' : '*'));
-    fprintf(output_file, "%d,", ntohs(tcp->th_win));
+    // fprintf(output_file, "%d,", ntohs(tcp->th_win));
     sprintf(pkt + strlen(pkt), "%d,", ntohs(tcp->th_win));
-    fprintf(output_file, "%u,%u\n", ntohl(tcp->th_seq), ntohl(tcp->th_ack));
+    // fprintf(output_file, "%u,%u\n", ntohl(tcp->th_seq), ntohl(tcp->th_ack));
     sprintf(pkt + strlen(pkt), "%u,%u\n", ntohl(tcp->th_seq), ntohl(tcp->th_ack));
     return pkt;
 }
@@ -404,17 +414,17 @@ char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pac
     // fprintf(stdout, "UDP: [src port %d] [dst port %d]", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
     // fprintf(stdout, " [datagram len %d] [chksum %d]\n" , ntohs(udp->uh_ulen), ntohs(udp->uh_ulen));
     if(is_forward){
-        fprintf(output_file,"%d,%d,", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
+        // fprintf(output_file,"%d,%d,", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
         sprintf(pkt, "%d,%d,", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
         sprintf(actualport, "%d,%d,", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
     } else{
-        fprintf(output_file,"%d,%d,", ntohs(udp->uh_dport), ntohs(udp->uh_sport));
+        // fprintf(output_file,"%d,%d,", ntohs(udp->uh_dport), ntohs(udp->uh_sport));
         sprintf(pkt,"%d,%d,", ntohs(udp->uh_dport), ntohs(udp->uh_sport));
         sprintf(actualport,"%d,%d,", ntohs(udp->uh_dport), ntohs(udp->uh_sport));
     }
-    fprintf(output_file,"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
+    // fprintf(output_file,"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
     sprintf(pkt + strlen(pkt),"%ld.%06ld,", timestamp.tv_sec, timestamp.tv_usec);
-    fprintf(output_file,"*,0,0,0");
+    // fprintf(output_file,"*,0,0,0");
     sprintf(pkt + strlen(pkt),"*,0,0,0\n");
 
     return pkt;
@@ -425,20 +435,19 @@ char* handle_UDP(u_char *args,const struct pcap_pkthdr* pkthdr,const u_char* pac
 int scan(char *dev){
     // int argc = 3;
     
+    pthread_detach(pthread_self());
     if (dev == NULL){
         printf("interface is NULL \n");
         return;
     }
 
     char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_t* liveCapture;
     struct bpf_program fp;      /* hold compiled program     */
     bpf_u_int32 maskp;          /* subnet mask               */
     bpf_u_int32 netp;           /* ip                        */
     u_char* args = NULL;
     
-    pthread_detach(pthread_self());
-
+    
     Py_Initialize();
     
     /* This is to add the path in the code */
@@ -486,8 +495,7 @@ int scan(char *dev){
         PyErr_Print();
         printf("Pass valid argument to link_list()\n");
     }
-
-    // Py_Finalize();
+    
     
 
     hostname = gethostname(host, sizeof(host)); //find the host name
@@ -503,7 +511,7 @@ int scan(char *dev){
     // }
 
     signal(SIGINT, sigintHandler);
-    output_file = fopen("out.csv","w");
+    // output_file = fopen("out.csv","w");
     
 
     /* ask pcap for the network address and mask of the device */
@@ -535,12 +543,24 @@ int scan(char *dev){
     
     // struct flow* start = (struct flow*)malloc(sizeof(struct flow));
     // sprintf(start->pkts + strlen(start->pkts), "start");
-    pcap_loop(liveCapture,-1,Jacket,args);
+    // if (fork() == 0){
+    //     while(scan_stoped == 0){
 
+    //         g_print("scan not stoped!");
+    //     };
+        
+    //     exit(0);
+    // }
+    // else {
+        pcap_loop(liveCapture,-1,Jacket,args);
+    // }
+    
+    // g_print("Loop breaked!\n");
     // fprintf(stdout,"\nfinished\n");
-    fflush(output_file);
-    fclose(output_file);
+    // fflush(output_file);
+    // fclose(output_file);
     // printf("--------------------------------------------------------------------\n");
     pthread_exit(NULL);
     return 0;
+
 }

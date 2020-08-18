@@ -9,6 +9,7 @@
 #include <linux/if_link.h>
 #include <pthread.h>
 #include <python3.8/Python.h>
+#include <signal.h>
 #include "../livefeaturecollector/LiveFeatureCollector.c"
 
 #include "ip_management.c"
@@ -136,22 +137,27 @@ GObject *gtkToolBarSave;
 GObject *gtkToolBarClear;
 GObject *gtkToolBarQuitMain;
 GObject *gtkWindowMain;
+GObject *gtkWindowSettings;
 GObject *gtkToolBarBackupMain;
 GObject *gtkToolBarRestoreMain;
 GObject *gtkToolBarDefaultMain;
 GObject *gtkLabelInterface;
 GObject *gtkImagePlot;
 GObject *gtkToolBarPlot;
+GObject *gtkToolBarSettingsMain;
+GObject *gtkListBoxOptions;
 
 int col_index = 0;
 int app_index = 0;
-gboolean scan_stoped = 1;
 gboolean plotButtonClicked = 0;
 
 // Youtube, Twitch, Instagram, Googlemeet, Skype, Anghami, Others.
 char *COLORS[7] = {"#ff9191","#b0ffff","#ffff99","#c6c6c6","#3936ff","#b4ffa3","#ffffff"};
 gchar *devInterface;
 
+
+gboolean coloringOption = TRUE;
+gboolean coloringOption_Settings = TRUE;
 
 
 
@@ -163,10 +169,65 @@ pthread_t ptid_insretProtoIP;
 void gtkToolBarRestore_clicked(GtkWidget *widget, gpointer data, GtkWindow *window);
 void gtkToolBarBackup_clicked(GtkWidget *widget, gpointer data, GtkWindow *window);
 void gtkToolBarDefault_clicked(GtkWidget *widget, gpointer data);
-
 void gtkToolBarPlot_clicked(GtkWidget *widget, gpointer data){
-
     plotButtonClicked = 1;
+    if (scan_stoped){
+
+        char data_to_plot[1024] = "";
+        gchar *app_name;
+        int pack;
+        int totlen;
+        int fpack;
+        int ftotlen;
+        int bpack;
+        int btotlen;
+        
+        gboolean valid = gtk_tree_model_get_iter_first (store_AppUsage,
+                                        &iter_AppUsage);
+        
+        while (valid){
+            gtk_tree_model_get (model_AppUsage, &iter_AppUsage,
+                    COL_AU_APP, &app_name,
+                    COL_AU_NPACK, &pack,
+                    COL_AU_TOTALLEN, &totlen,
+                    COL_AU_F_NPACK, &fpack,
+                    COL_AU_F_TOTALLEN, &ftotlen,
+                    COL_AU_B_NPACK, &bpack,
+                    COL_AU_B_TOTALLEN, &btotlen,
+                    -1);      
+
+            strcat(data_to_plot, app_name);
+            strcat(data_to_plot, ":");
+            char converted_packs[50]; 
+            sprintf(converted_packs, "%d", pack);
+            strcat(data_to_plot, converted_packs);
+            strcat(data_to_plot, ":");
+            char converted_traffic_size[50]; 
+            sprintf(converted_traffic_size, "%d", totlen);
+            strcat(data_to_plot, converted_traffic_size);
+            strcat(data_to_plot, ",");
+        
+        
+            valid = gtk_tree_model_iter_next (store_AppUsage,
+                                &iter_AppUsage);
+        
+        }
+
+        // g_print("Getting elements is done! => %d \n", strlen(data_to_plot));
+        
+        if (strlen(data_to_plot) != 0){
+            // g_print("Getting elements is done! => %s \n", data_to_plot);
+            pargs_plot = Py_BuildValue("(s)", data_to_plot);
+            PyObject_CallObject(plot_app_usage, pargs_plot);
+            gtk_image_set_from_file (gtkImagePlot, ".appusage.png");
+            
+            
+        }
+
+
+    }
+    
+    
         
 
 }
@@ -174,6 +235,8 @@ void gtkToolBarPlot_clicked(GtkWidget *widget, gpointer data){
 void gtkStoreAppend(gchar *data){
     gdk_threads_init ();
     gdk_threads_enter ();
+
+    // printf("Hello\n");
     
     char *FLOWID = strtok(data, "|");
     char *APP = strtok(NULL, "|");
@@ -298,18 +361,23 @@ void gtkStoreAppend(gchar *data){
             COL_B_MEANWIN, B_MEANWIN,
             -1);
     // Youtube, Twitch, Instagram, Googlemeet, Skype, Anghami, Others.
-    if (strcmp(APP, "Youtube") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[0],-1);
-    else if (strcmp(APP, "Twitch") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[1],-1);
-    else if (strcmp(APP, "Instagram") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[2],-1);
-    else if (strcmp(APP, "Googlemeet") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[3],-1);
-    else if (strcmp(APP, "Skype") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[4],-1);
-    else if (strcmp(APP, "Anghami") == 0)
-        gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[5],-1);
+    if (coloringOption){
+
+        if (strcmp(APP, "Youtube") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[0],-1);
+        else if (strcmp(APP, "Twitch") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[1],-1);
+        else if (strcmp(APP, "Instagram") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[2],-1);
+        else if (strcmp(APP, "Googlemeet") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[3],-1);
+        else if (strcmp(APP, "Skype") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[4],-1);
+        else if (strcmp(APP, "Anghami") == 0)
+            gtk_list_store_set (store_Capture, &iter_Capture, COL_COLOR, COLORS[5],-1);
+
+    }
+    
 
     insert(APP,FLOWID);
     
@@ -330,8 +398,9 @@ void gtkStoreAppend(gchar *data){
     int btotlen;
 
     
-    char data_to_plot[1024] = "";
+    // memset(data_to_plot, 0, 1024);
     done = FALSE;
+    char data_to_plot[1024] = "";
     
     valid = gtk_tree_model_get_iter_first (store_AppUsage,
                                        &iter_AppUsage);
@@ -370,6 +439,10 @@ void gtkStoreAppend(gchar *data){
         char converted_packs[50]; 
         sprintf(converted_packs, "%d", pack);
         strcat(data_to_plot, converted_packs);
+        strcat(data_to_plot, ":");
+        char converted_traffic_size[50]; 
+        sprintf(converted_traffic_size, "%d", totlen);
+        strcat(data_to_plot, converted_traffic_size);
         strcat(data_to_plot, ",");
     
     
@@ -377,7 +450,7 @@ void gtkStoreAppend(gchar *data){
                             &iter_AppUsage);
     
     }
-
+    
     // g_print("%s\n", data_to_plot);
     
     // call to draw_plot
@@ -413,11 +486,18 @@ void gtkStoreAppend(gchar *data){
     if (plotButtonClicked){
         pargs_plot = Py_BuildValue("(s)", data_to_plot);
         PyObject *result = PyObject_CallObject(plot_app_usage, pargs_plot);
-        gtk_image_set_from_file (gtkImagePlot, "appusage.png");
+        gtk_image_set_from_file (gtkImagePlot, ".appusage.png");
         plotButtonClicked = 0;
     }
     
     gdk_threads_leave ();
+    
+    // if (plotButtonClicked){
+    //     pargs_plot = Py_BuildValue("(s)", data_to_plot);
+    //     PyObject *result = PyObject_CallObject(plot_app_usage, pargs_plot);
+    //     gtk_image_set_from_file (gtkImagePlot, ".appusage.png");
+    //     plotButtonClicked = 0;
+    // }
     
     
     
@@ -579,8 +659,6 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "text", COL_MEANLEN,
                                                 "cell-background",
                                                 COL_COLOR,
-                                                "cell-background",
-                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -594,7 +672,7 @@ static GtkWidget * create_view_and_model_scan (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "Mean IAT",  
+                                                "Min IAT",  
                                                 renderer,
                                                 "text", COL_MINIAT,
                                                 "cell-background",
@@ -687,6 +765,8 @@ static GtkWidget * create_view_and_model_scan (void){
                                                 "Max win",  
                                                 renderer,
                                                 "text", COL_MAXWIN,
+                                                "cell-background",
+                                                COL_COLOR,
                                                 NULL);
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
@@ -763,7 +843,7 @@ static GtkWidget * create_view_and_model_scan (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "F Mean IAT",  
+                                                "F Min IAT",  
                                                 renderer,
                                                 "text", COL_F_MINIAT,
                                                 "cell-background",
@@ -817,7 +897,7 @@ static GtkWidget * create_view_and_model_scan (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "F Rest count",  
+                                                "F Rst count",  
                                                 renderer,
                                                 "text", COL_F_RSTCOUNT,
                                                 "cell-background",
@@ -934,7 +1014,7 @@ static GtkWidget * create_view_and_model_scan (void){
     renderer = gtk_cell_renderer_text_new ();
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (view),
                                                 -1,      
-                                                "B Mean IAT",  
+                                                "B Min IAT",  
                                                 renderer,
                                                 "text", COL_B_MINIAT,
                                                 "cell-background",
@@ -1048,6 +1128,8 @@ static GtkWidget * create_view_and_model_scan (void){
     for (int i =0; i < 59; i++){
         column = gtk_tree_view_get_column(view, i);
         gtk_tree_view_column_set_sort_column_id(column, i);
+        if (i > 12 || i == 3)
+            gtk_tree_view_column_set_visible (column, FALSE);
     }
 
     /* The tree view has acquired its own reference to the
@@ -1194,33 +1276,73 @@ void gtkToolBarStart_clicked(GtkWidget *widget, gpointer data) {
     //         COL_APP, "djamel",
     //         COL_NPACK, "999",
     //         -1);
-    gtk_widget_set_sensitive(widget, FALSE);
+    // while (!jacket_stoped)
+    // {
+    //     /* code */
+    // }
+    
+    // memset(data_to_plot, 0, 1024);
     scan_stoped = 0;
+    gtk_widget_set_sensitive(widget, FALSE);
+    // if ((ptid_scan = fork()) == 0){
+    //     scan(devInterface);
+    // }
+    // g_print("before start %d\n", ptid_scan);
+    // ptid_scan = 0;
     pthread_create(&ptid_scan, NULL, &scan, devInterface);
-    sleep(2);
+    // g_print("after start %d\n", ptid_scan);
+    // sleep(2);
+    // scan(devInterface);
+    
     gtk_widget_set_sensitive(gtkToolBarStop, TRUE);
-    g_print("start clicked \n");
+    gtk_widget_set_sensitive(gtkToolBarRestart, TRUE);
+    // g_print("start clicked \n");
+
+    
+    
     
     
 }
 void gtkToolBarStop_clicked(GtkWidget *widget, gpointer data) {
+    // while (jacket_stoped)
+    // {
+    //     /* code */
+    // }
     scan_stoped = 1;
-    pthread_cancel(ptid_scan);
+    // pthread_kill(ptid_scan, 3);
+    // pthread_join(ptid_scan, NULL);
+    // kill(ptid_scan, SIGKILL);
+    
+    // g_print("before cancel %d\n", ptid_scan);
+    while(TRUE){        
+        if (liveCapture != NULL){
+            pcap_breakloop(liveCapture);
+            break;
+        }
+    }
+    
+
+    // pthread_cancel(ptid_scan);
+    // g_print("after cancel %d\n", ptid_scan);
+    
     gtk_widget_set_sensitive(widget, FALSE);
     gtk_widget_set_sensitive(gtkToolBarStart, TRUE);
-    g_print("stop clicked \n");
+    gtk_widget_set_sensitive(gtkToolBarRestart, FALSE);
+    // g_print("stop clicked \n");
 
     // check_ipsets();
 }
 
 void gtkToolBarRestart_clicked(GtkWidget *widget, gpointer data) {
+    // gtk_widget_set_sensitive(gtkToolBarRestart, FALSE);
+    
     gtk_list_store_clear (store_Capture);
     gtk_list_store_clear (store_AppUsage);
-
+    gtkToolBarStop_clicked(gtkToolBarStop, data);
     col_index = 0;
     app_index = 0;
-
-    gtkToolBarStop_clicked(gtkToolBarStop, data);
+    AppsToBlock[7] = NULL;
+    init_AppIps();
     gtkToolBarStart_clicked(gtkToolBarStart, data);
     
 
@@ -1736,6 +1858,105 @@ void gtkToolBarClear_clicked(GtkWidget *widget, gpointer data) {
     app_index = 0;
 }
 
+void gtkSettingsApply_clicked(GtkWidget *widget, gpointer data, GtkWindow *window){
+
+    GtkTreeViewColumn *column;
+    GtkListBoxRow *row;
+    GtkGrid *grid;
+    GtkCheckButton *check;
+
+    coloringOption = coloringOption_Settings;
+
+    for (int i =1; i < 57; i++){
+        row = gtk_list_box_get_row_at_index (gtkListBoxOptions, i);
+        grid = gtk_bin_get_child(GTK_BIN(row));
+        check = gtk_grid_get_child_at (grid, 1, 0);
+        gboolean toggled = gtk_toggle_button_get_active(check);
+        
+        column = gtk_tree_view_get_column(view_Capture, i+2);
+        gtk_tree_view_column_set_visible (column, toggled);
+        
+    }
+
+    gtk_window_close(window);
+    gtk_widget_set_sensitive(gtkWindowMain, TRUE);
+
+}
+
+void gtkSwitch_activate(GtkWidget *widget, gpointer data){
+    coloringOption_Settings = gtk_switch_get_state(widget);
+    gtk_switch_set_active(widget, coloringOption_Settings);
+}
+
+void gtkToggleSelectAll_toggled(GtkWidget *widget, gpointer data){
+    gboolean toggled = gtk_toggle_button_get_active(widget);
+    GtkListBoxRow *row;
+    GtkGrid *grid;
+    GtkCheckButton *check;
+    for (int i =1; i < 57; i++){
+        row = gtk_list_box_get_row_at_index (gtkListBoxOptions, i);
+        grid = gtk_bin_get_child(GTK_BIN(row));
+        check = gtk_grid_get_child_at (grid, 1, 0);
+        gtk_toggle_button_set_active(check, toggled);
+    }
+
+    
+
+}
+
+void gtkToolBarSettingsMain_clicked(GtkWidget *widget, gpointer data) {
+    GtkBuilder *settingsBuilder;
+    GtkWindow *gtkWindowSettings;
+    GObject *gtkSettingsApply;
+    GObject *gtkSettingsCancel;
+    GObject *gtkToggleSelectAll;
+    GObject *gtkSwitch;
+    GError *error = NULL;
+
+
+    settingsBuilder = gtk_builder_new ();
+    if (gtk_builder_add_from_file (settingsBuilder, "settings.ui", &error) == 0){
+        g_printerr ("Error loading file: %s\n", error->message);
+        g_clear_error (&error);
+        return 1;
+    }
+
+    gtkWindowSettings = gtk_builder_get_object (settingsBuilder, "gtkWindowSettings");
+    gtkSettingsApply = gtk_builder_get_object (settingsBuilder, "gtkSettingsApply");
+    gtkSettingsCancel = gtk_builder_get_object (settingsBuilder, "gtkSettingsCancel");
+    gtkSwitch = gtk_builder_get_object (settingsBuilder, "gtkSwitch");
+    gtkListBoxOptions = gtk_builder_get_object (settingsBuilder, "gtkListBoxOptions");
+    gtkToggleSelectAll = gtk_builder_get_object(settingsBuilder, "gtkToggleSelectAll");
+
+
+    g_signal_connect (gtkWindowSettings, "destroy", gtkWarningErrorQuitMain_clicked, NULL);
+    g_signal_connect (gtkSettingsApply, "clicked", gtkSettingsApply_clicked, gtkWindowSettings);
+    g_signal_connect (gtkSettingsCancel, "clicked", gtkWarningErrorQuitMain_clicked, NULL);
+    g_signal_connect (gtkSwitch, "state-set", gtkSwitch_activate, NULL);
+    g_signal_connect (gtkToggleSelectAll, "toggled", gtkToggleSelectAll_toggled, NULL);
+    gtk_switch_set_state(gtkSwitch, coloringOption);
+    gtk_switch_set_active(gtkSwitch, coloringOption);
+
+    GtkTreeViewColumn *column;
+    GtkListBoxRow *row;
+    GtkGrid *grid;
+    GtkCheckButton *check;
+
+    for (int i =3; i < 59; i++){
+        column = gtk_tree_view_get_column(view_Capture, i);
+        gboolean visible = gtk_tree_view_column_get_visible (column);
+        row = gtk_list_box_get_row_at_index (gtkListBoxOptions, i-2);
+        grid = gtk_bin_get_child(GTK_BIN(row));
+        check = gtk_grid_get_child_at (grid, 1, 0);
+        gtk_toggle_button_set_active(check, visible);
+        
+    }
+
+    gtk_widget_show_all(gtkWindowSettings);
+    gtk_widget_set_sensitive(gtkWindowMain, FALSE);
+}
+
+
 int start (int   argc, char *argv[], gchar *dev){
     gchar *text;
     gint i;
@@ -1750,33 +1971,6 @@ int start (int   argc, char *argv[], gchar *dev){
     // gdk_threads_enter ();
     devInterface = dev;
     init_AppIps();
-    // Py_Initialize();
-    // PyObject *sys = PyImport_ImportModule("sys");
-    // PyObject *path = PyObject_GetAttrString(sys, "path");
-
-    // PyList_Append(path, PyUnicode_FromString("../gui/"));
-    
-    /* 1st: Import the module */
-    // PyObject* ModuleString2 = PyUnicode_FromString((char*) "appusage_plot");
-    // if (!ModuleString2) {
-    //     PyErr_Print();
-    //     printf("Error formating python script\n");
-    // }
-
-    // PyObject* Module2 = PyImport_Import(ModuleString2);
-    // if (!Module2) {
-    //     PyErr_Print();
-    //     printf("Error importing python script\n");
-    // }
-
-    // /* 2nd: Getting reference to the function */
-    // plot_app_usage = PyObject_GetAttrString(Module2, (char*)"plot_app_usage");
-    // if (!plot_app_usage) {
-    //     PyErr_Print();
-    //     printf("Pass valid argument to link_list()\n");
-    // }
-    // Py_Finalize();
-
 
     gtk_init (&argc, &argv);
     
@@ -1803,6 +1997,7 @@ int start (int   argc, char *argv[], gchar *dev){
     gtkToolBarBackupMain =  gtk_builder_get_object(builder, "gtkToolBarBackupMain");
     gtkToolBarRestoreMain =  gtk_builder_get_object(builder, "gtkToolBarRestoreMain");
     gtkToolBarDefaultMain =  gtk_builder_get_object(builder, "gtkToolBarDefaultMain");
+    gtkToolBarSettingsMain = gtk_builder_get_object(builder, "gtkToolBarSettingsMain");
     gtkImagePlot = gtk_builder_get_object(builder, "gtkImagePlot");
     gtkToolBarPlot = gtk_builder_get_object(builder, "gtkToolBarPlot");
     
@@ -1811,7 +2006,9 @@ int start (int   argc, char *argv[], gchar *dev){
     gtkScrolledWindow2 = gtk_builder_get_object(builder,"gtkScrolledWindow2");
 
     gtkLabelInterface = gtk_builder_get_object(builder, "gtkLabelInterface");
-    gtk_label_set_text(gtkLabelInterface, devInterface);
+    
+    
+    gtk_widget_set_sensitive(gtkToolBarRestart, FALSE);
 
     
     
@@ -1838,6 +2035,8 @@ int start (int   argc, char *argv[], gchar *dev){
     g_signal_connect (gtkWindowMain, "destroy", G_CALLBACK (gtk_main_quit), NULL);
     g_signal_connect (gtkToolBarBackupMain, "clicked", gtkToolBarBackup_clicked, NULL);
     g_signal_connect (gtkToolBarRestoreMain, "clicked", gtkToolBarRestore_clicked, NULL);
+    g_signal_connect (gtkToolBarSettingsMain, "clicked", gtkToolBarSettingsMain_clicked, NULL);
+
     // g_signal_connect (gtkToolBarChangeNet, "clicked", gtkToolBarChangeNet_clicked, NULL);
     g_signal_connect (gtkToolBarDefaultMain, "clicked", gtkToolBarDefault_clicked, NULL);
     g_signal_connect (gtkToolBarPlot, "clicked", gtkToolBarPlot_clicked, NULL);

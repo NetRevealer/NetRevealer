@@ -318,6 +318,7 @@ def extractFeatures_fromFlow(flow):
     # print(len(flowDetail.split('|')))
     # print(flowDetail)
     # print(len(flowDetail.split('|')))
+    # print(flowDetail)
     return flowDetail
 
 class Network(nn.Module):
