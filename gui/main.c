@@ -2006,6 +2006,7 @@ int start (int   argc, char *argv[], gchar *dev){
     gtkScrolledWindow2 = gtk_builder_get_object(builder,"gtkScrolledWindow2");
 
     gtkLabelInterface = gtk_builder_get_object(builder, "gtkLabelInterface");
+    gtk_label_set_text(gtkLabelInterface, dev);
     
     
     gtk_widget_set_sensitive(gtkToolBarRestart, FALSE);

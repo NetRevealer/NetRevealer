@@ -394,6 +394,14 @@ int fileexists(const char * filename){
 
 
 int main (int   argc, char *argv[]){
+
+    uid_t uid=getuid();
+
+    if (uid != 0 ) {
+        printf("The application needs to be executed as super-user!\n");
+        exit(1);
+    }
+    
     gchar *text;
     gint i;
     GtkWidget *row;
