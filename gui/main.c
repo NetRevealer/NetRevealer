@@ -1846,6 +1846,7 @@ void gtkToolBarSave_clicked(GtkWidget *widget, gpointer data, GtkWindow *window)
         g_signal_connect (gtkErrorOk, "clicked", gtkErrorOkMain_clicked, gtkErrorWidget);
         g_signal_connect (gtkErrorWidget, "destroy", gtkWarningErrorQuitMain_clicked, NULL);
     }
+    gtk_widget_destroy (dialog);
 
 }
 
